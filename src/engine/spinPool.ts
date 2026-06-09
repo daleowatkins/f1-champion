@@ -64,9 +64,12 @@ export async function loadSimulationGrid(): Promise<SimulationGrid> {
   return DEFAULT_SIMULATION_GRID
 }
 
-export function pickRandomSpin(entries: SpinEntry[]): SpinEntry {
+export function pickRandomSpin(
+  entries: SpinEntry[],
+  rand: () => number = Math.random,
+): SpinEntry {
   const totalWeight = entries.reduce((sum, e) => sum + e.weight, 0)
-  let r = Math.random() * totalWeight
+  let r = rand() * totalWeight
   for (const entry of entries) {
     r -= entry.weight
     if (r <= 0) return entry
@@ -80,9 +83,11 @@ export interface PoolOption {
   fillsLabel: string
 }
 
+export type DriverSlot = 'driver1' | 'driver2' | 'reserveDriver'
+
 export interface DriverPoolOption {
   option: DraftOption
-  availableSlots: ('driver1' | 'driver2')[]
+  availableSlots: DriverSlot[]
 }
 
 export interface OptionGroup {
@@ -103,22 +108,59 @@ function usedDriverIds(picks: DraftPick[]): Set<string> {
   )
 }
 
+/** Placeholder reserve entries with no real driver name. */
+export function isSyntheticReserveOption(option: DraftOption): boolean {
+  return option.id.startsWith('reserve-')
+}
+
+/** Reserve slot draws from the spun team's race lineup first, then named reserves. */
+export function reserveDriverOptions(
+  pool: DraftPool,
+  usedDriverIds: Set<string>,
+): DraftOption[] {
+  const lineup = pool.drivers.filter((d) => !usedDriverIds.has(d.id))
+  if (lineup.length > 0) return lineup
+
+  const namedReserves = pool.reserves.filter(
+    (o) => !usedDriverIds.has(o.id) && !isSyntheticReserveOption(o),
+  )
+  if (namedReserves.length > 0) return namedReserves
+
+  return pool.reserves.filter((o) => !usedDriverIds.has(o.id))
+}
+
 export function getAllAvailableOptionGroups(pool: DraftPool, picks: DraftPick[]): OptionGroup[] {
   const groups: OptionGroup[] = []
   const usedDrivers = usedDriverIds(picks)
 
-  const d1Open = !isSlotFilled(picks, 'driver1')
-  const d2Open = !isSlotFilled(picks, 'driver2')
-  if (d1Open || d2Open) {
-    const drivers = pool.drivers.filter((d) => !usedDrivers.has(d.id))
-    if (drivers.length > 0) {
-      const availableSlots: ('driver1' | 'driver2')[] = []
-      if (d1Open) availableSlots.push('driver1')
-      if (d2Open) availableSlots.push('driver2')
+  const availableDriverSlots: DriverSlot[] = []
+  if (!isSlotFilled(picks, 'driver1')) availableDriverSlots.push('driver1')
+  if (!isSlotFilled(picks, 'driver2')) availableDriverSlots.push('driver2')
+  if (!isSlotFilled(picks, 'reserveDriver')) availableDriverSlots.push('reserveDriver')
+
+  if (availableDriverSlots.length > 0) {
+    const lineupDrivers = pool.drivers.filter((d) => !usedDrivers.has(d.id))
+    const driverOptions: DriverPoolOption[] = lineupDrivers.map((option) => ({
+      option,
+      availableSlots: availableDriverSlots,
+    }))
+
+    if (
+      availableDriverSlots.includes('reserveDriver') &&
+      lineupDrivers.length === 0
+    ) {
+      const lineupIds = new Set(pool.drivers.map((d) => d.id))
+      for (const option of reserveDriverOptions(pool, usedDrivers)) {
+        if (lineupIds.has(option.id)) continue
+        driverOptions.push({ option, availableSlots: ['reserveDriver'] })
+      }
+    }
+
+    if (driverOptions.length > 0) {
       groups.push({
         category: 'Drivers',
         options: [],
-        driverOptions: drivers.map((option) => ({ option, availableSlots })),
+        driverOptions,
       })
     }
   }
@@ -129,16 +171,11 @@ export function getAllAvailableOptionGroups(pool: DraftPool, picks: DraftPick[])
     { slot: 'teamPrincipal', poolKey: 'teamPrincipals', category: 'Team Principals' },
     { slot: 'engineerCrew', poolKey: 'pitTeams', category: 'Engineer Crew' },
     { slot: 'devBudget', poolKey: 'devBudgets', category: 'Development Budget' },
-    { slot: 'reserveDriver', poolKey: 'reserves', category: 'Reserve Drivers' },
   ]
 
   for (const { slot, poolKey, category } of singleSlots) {
     if (isSlotFilled(picks, slot)) continue
-    const items = pool[poolKey] as DraftOption[]
-    const available =
-      slot === 'reserveDriver'
-        ? items.filter((o) => !usedDrivers.has(o.id))
-        : items
+    const available = pool[poolKey] as DraftOption[]
     if (available.length > 0) {
       groups.push({
         category,

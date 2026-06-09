@@ -1,16 +1,18 @@
 import { ComponentCard } from './ComponentCard'
 import { DriverOptionCard } from './DriverOptionCard'
+import { getDriverBadge, getOptionBadge } from '../engine/badges'
 import type { OptionGroup } from '../engine/spinPool'
 import type { GameMode } from '../types/game'
 
 interface Props {
   groups: OptionGroup[]
   mode: GameMode
+  packYear: number
   onSelect: (slot: OptionGroup['options'][0]['slot'], option: OptionGroup['options'][0]['option']) => void
   disabled?: boolean
 }
 
-export function OptionPool({ groups, mode, onSelect, disabled }: Props) {
+export function OptionPool({ groups, mode, packYear, onSelect, disabled }: Props) {
   if (groups.length === 0) {
     return (
       <p className="text-center text-white/50 text-sm py-4">
@@ -33,6 +35,7 @@ export function OptionPool({ groups, mode, onSelect, disabled }: Props) {
                 option={item.option}
                 mode={mode}
                 availableSlots={item.availableSlots}
+                badge={getDriverBadge(item.option, packYear)}
                 disabled={disabled}
                 onSelect={(slot) => onSelect(slot, item.option)}
               />
@@ -42,6 +45,7 @@ export function OptionPool({ groups, mode, onSelect, disabled }: Props) {
                 <ComponentCard
                   option={item.option}
                   mode={mode}
+                  badge={getOptionBadge(item.option, item.slot, packYear)}
                   disabled={disabled}
                   isOnlyOption={group.options.length === 1}
                   fillsSlot={item.fillsLabel}

@@ -28,6 +28,7 @@ function pick(
     sourceConstructorId: pack.constructorId,
     sourceConstructorName: pack.constructorName,
     sourceYear: pack.year,
+    historicalWccPosition: pack.historicalWccPosition,
   }
 }
 
@@ -37,7 +38,7 @@ describe('car vs driver balance', () => {
 
   it('legend driver with mediocre car is slower than a top grid team', () => {
     const legendPace = computeDriverRacePace(94, 70)
-    const redBullPace = 87
+    const redBullPace = computeDriverRacePace(87, 82)
     expect(legendPace).toBeLessThan(redBullPace - 8)
   })
 

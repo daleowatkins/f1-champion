@@ -54,7 +54,7 @@ describe('devDraft', () => {
     const selection = autoFillBest(sources, { '2020/mclaren': pack })
     expect(selection.driver1).toBe('d-high')
     expect(selection.driver2).toBe('d-mid')
-    expect(selection.reserveDriver).toBe('r1')
+    expect(selection.reserveDriver).toBe('d-low')
 
     const picks = selectionToPicks(selection, sources, { '2020/mclaren': pack })
     expect(picks).toHaveLength(8)

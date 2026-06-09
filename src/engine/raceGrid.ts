@@ -1,4 +1,5 @@
 import type { EraRules } from '../types/game'
+import type { EngineerEffects } from './ratings'
 import type { PlayerDnfProfile } from './perks'
 import { pointsForPosition } from './eraRules'
 
@@ -35,6 +36,7 @@ function samplePerformance(
   varianceMod: number,
   dnfChance: number,
   dnfProfile?: PlayerDnfProfile,
+  pitEffects?: Pick<EngineerEffects, 'pitstopRisk' | 'pitstopPenalty'>,
 ): number | 'DNF' {
   if (rollDnf(rand, dnfProfile, dnfChance)) return 'DNF'
 
@@ -48,7 +50,13 @@ function samplePerformance(
   if (dayRoll < 0.08) dayModifier -= rand() * 8
   else if (dayRoll > 0.92) dayModifier += rand() * 8
 
-  return strength + noise + luck + dayModifier
+  let perf = strength + noise + luck + dayModifier
+
+  if (pitEffects && rand() < pitEffects.pitstopRisk) {
+    perf -= pitEffects.pitstopPenalty * (0.6 + rand() * 0.8)
+  }
+
+  return perf
 }
 
 /** Simulate one race — every finisher gets a unique position. */
@@ -57,10 +65,22 @@ export function simulateRaceClassification(
   rand: () => number,
   varianceMod: number,
   dnfChance: number,
+  engineerEffects?: EngineerEffects,
 ): RaceClassification {
+  const pitForPlayer = engineerEffects
+    ? { pitstopRisk: engineerEffects.pitstopRisk, pitstopPenalty: engineerEffects.pitstopPenalty }
+    : undefined
+
   const performances = drivers.map((d) => ({
     id: d.id,
-    perf: samplePerformance(d.strength, rand, varianceMod, dnfChance, d.dnfProfile),
+    perf: samplePerformance(
+      d.strength,
+      rand,
+      varianceMod,
+      dnfChance,
+      d.dnfProfile,
+      d.isPlayer ? pitForPlayer : undefined,
+    ),
   }))
 
   const finishers = performances
@@ -82,6 +102,7 @@ export function simulateRaceClassification(
         varianceMod * 0.7,
         dnfChance * 0.35,
         d.dnfProfile,
+        d.isPlayer ? pitForPlayer : undefined,
       ),
     }))
     .filter((q) => q.q !== 'DNF')

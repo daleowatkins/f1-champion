@@ -23,6 +23,8 @@ function stubResult(overrides: Partial<SeasonResult>): SeasonResult {
     constructorName: 'Dream Team',
     year: 2026,
     seasonPerk: null,
+    runSeed: 12345,
+    simulationEra: { type: '2026' },
     ...overrides,
   }
 }
@@ -54,6 +56,29 @@ describe('seasonAchievements', () => {
     expect(ids).toContain('podium-every-race')
     expect(ids).toContain('no-retirements')
     expect(ids).toContain('win-every-race')
+    expect(ids).toContain('total-domination')
+  })
+
+  it('detects total domination only when both drivers finish 1-2 every race', () => {
+    const dominated = stubResult({
+      raceResults: [
+        { round: 1, grandPrix: 'A', grandPrixCode: 'A', driver1Position: 1, driver2Position: 2, driver1Points: 25, driver2Points: 18, teamPoints: 43 },
+        { round: 2, grandPrix: 'B', grandPrixCode: 'B', driver1Position: 2, driver2Position: 1, driver1Points: 18, driver2Points: 25, teamPoints: 43 },
+      ],
+    })
+    expect(
+      computeSeasonAchievements(dominated).find((x) => x.id === 'total-domination')?.achieved,
+    ).toBe(true)
+
+    const oneMiss = stubResult({
+      raceResults: [
+        { round: 1, grandPrix: 'A', grandPrixCode: 'A', driver1Position: 1, driver2Position: 2, driver1Points: 25, driver2Points: 18, teamPoints: 43 },
+        { round: 2, grandPrix: 'B', grandPrixCode: 'B', driver1Position: 1, driver2Position: 3, driver1Points: 25, driver2Points: 15, teamPoints: 40 },
+      ],
+    })
+    expect(
+      computeSeasonAchievements(oneMiss).find((x) => x.id === 'total-domination')?.achieved,
+    ).toBe(false)
   })
 
   it('fails podiums when both drivers retire', () => {

@@ -17,6 +17,7 @@ function elitePicks(pack: SeasonPack): DraftPick[] {
     sourceConstructorId: pack.constructorId,
     sourceConstructorName: pack.constructorName,
     sourceYear: pack.year,
+    historicalWccPosition: pack.historicalWccPosition,
   })
   const bestDriver = [...pool.drivers].sort((a, b) => b.rating - a.rating)
   const maxRating = (opts: DraftOption[]) =>

@@ -546,7 +546,6 @@ function DevLabInner() {
           </div>
           <ResultsPanel
             result={result}
-            mode="classic"
             picks={picks}
             onPlayAgain={reset}
           />

@@ -1,9 +1,13 @@
 import { motion } from 'framer-motion'
+import type { OptionBadge } from '../engine/badges'
 import type { DraftOption, GameMode } from '../types/game'
+import { OptionShine } from './OptionShine'
+import { RatingBreakdownDetail } from './RatingBreakdownDetail'
 
 interface Props {
   option: DraftOption
   mode: GameMode
+  badge?: OptionBadge | null
   onSelect?: () => void
   disabled?: boolean
   isOnlyOption?: boolean
@@ -14,6 +18,7 @@ interface Props {
 export function ComponentCard({
   option,
   mode,
+  badge = null,
   onSelect,
   disabled,
   isOnlyOption,
@@ -42,7 +47,7 @@ export function ComponentCard({
           )}
         </div>
         {showStats && (
-          <div className="shrink-0 text-right">
+          <div className={`shrink-0 text-right ${badge ? 'pt-5' : ''}`}>
             <span className="text-2xl font-bold text-f1-accent">{option.rating}</span>
             <p className="text-xs text-white/40">OVR</p>
           </div>
@@ -64,6 +69,7 @@ export function ComponentCard({
           )}
         </div>
       )}
+      {showStats && <RatingBreakdownDetail option={option} />}
       {isOnlyOption && (
         <span className="mt-2 inline-block text-xs text-amber-400">Only option</span>
       )}
@@ -71,19 +77,25 @@ export function ComponentCard({
   )
 
   if (hideSelectButton) {
-    return <div className={className}>{content}</div>
+    return (
+      <OptionShine badge={badge}>
+        <div className={className}>{content}</div>
+      </OptionShine>
+    )
   }
 
   return (
-    <motion.button
-      type="button"
-      whileHover={{ scale: disabled ? 1 : 1.02 }}
-      whileTap={{ scale: disabled ? 1 : 0.98 }}
-      onClick={onSelect}
-      disabled={disabled}
-      className={className}
-    >
-      {content}
-    </motion.button>
+    <OptionShine badge={badge}>
+      <motion.button
+        type="button"
+        whileHover={{ scale: disabled ? 1 : 1.02 }}
+        whileTap={{ scale: disabled ? 1 : 0.98 }}
+        onClick={onSelect}
+        disabled={disabled}
+        className={className}
+      >
+        {content}
+      </motion.button>
+    </OptionShine>
   )
 }

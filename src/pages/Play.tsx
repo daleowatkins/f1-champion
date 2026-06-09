@@ -10,7 +10,9 @@ import { PrioritySelect } from '../components/PrioritySelect'
 import { TeamRatingsPanel } from '../components/TeamRatingsPanel'
 import { SeasonBandit } from '../components/SeasonBandit'
 import { getAllAvailableOptionGroups } from '../engine/spinPool'
-import { DRIVER_PRIORITY_LABELS, SLOT_ORDER } from '../types/game'
+import { parseRunSeed } from '../lib/runSeed'
+import { DRIVER_PRIORITY_LABELS, parseEraPolicy, SLOT_ORDER } from '../types/game'
+import type { SimulationEraChoice } from '../types/game'
 import { RESPINS_PER_RUN } from '../config/gameConfig'
 import { useDevGate } from '../hooks/useDevGate'
 
@@ -20,6 +22,9 @@ const RESULTS_PAUSE_MS = 1200
 export function Play() {
   const [searchParams] = useSearchParams()
   const mode = (searchParams.get('mode') as 'classic' | 'expert') ?? 'classic'
+  const eraParam = searchParams.get('era')
+  const eraPolicy = parseEraPolicy(mode, eraParam)
+  const seedParam = searchParams.get('seed')
   const devUnlocked = useDevGate()
 
   const {
@@ -28,11 +33,15 @@ export function Play() {
     spinEntry,
     seasonPack,
     simulationGrid,
+    simulationEra,
+    simulationEraPolicy,
     picks,
     result,
     respinsUsed,
     spinIndex,
+    runSeed,
     setMode,
+    setRunSeed,
     setDriverPriority,
     initSpinIndex,
     startSpin,
@@ -55,9 +64,15 @@ export function Play() {
   const simulationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
-    setMode(mode)
+    setMode(mode, eraPolicy)
     initSpinIndex().catch(console.error)
-  }, [mode, setMode, initSpinIndex])
+  }, [mode, eraPolicy, setMode, initSpinIndex])
+
+  useEffect(() => {
+    if (!seedParam) return
+    const parsed = parseRunSeed(seedParam)
+    if (parsed) setRunSeed(parsed)
+  }, [seedParam, setRunSeed])
 
   useEffect(() => {
     setIsSpinning(phase === 'spinning')
@@ -131,6 +146,11 @@ export function Play() {
     (phase === 'draft' ||
       (phase === 'spinning' && (seasonPack !== null || picks.length > 0)))
 
+  const eraBadge = (era: SimulationEraChoice): string => {
+    if (era.type === '2026') return '2026 Championship'
+    return `${era.constructorName} ${era.year}`
+  }
+
   const showFirstSpin =
     phase === 'spin' || (phase === 'spinning' && picks.length === 0 && !seasonPack)
 
@@ -145,7 +165,14 @@ export function Play() {
       </div>
 
       <div className={`px-4 ${showFullWidthResults ? '' : 'max-w-5xl mx-auto'}`}>
-      {phase === 'priority' && <PrioritySelect onSelect={setDriverPriority} />}
+      {phase === 'priority' && (
+        <>
+          <p className="text-center text-xs text-f1-accent mb-4">
+            Season: {eraPolicy === 'historical-first-spin' ? 'Historical (set by first roll)' : '2026 Championship'}
+          </p>
+          <PrioritySelect onSelect={setDriverPriority} />
+        </>
+      )}
 
       {showFirstSpin && (
         <div className="flex flex-col items-center">
@@ -156,6 +183,9 @@ export function Play() {
           {driverPriority && (
             <p className="text-xs text-f1-accent mb-4">
               {DRIVER_PRIORITY_LABELS[driverPriority]}
+              {simulationEraPolicy === 'historical-first-spin' && simulationEra.type === 'historical' && (
+                <span className="block text-white/50 mt-1">Racing in {eraBadge(simulationEra)}</span>
+              )}
             </p>
           )}
           <SpinReel
@@ -203,6 +233,7 @@ export function Play() {
                 <OptionPool
                   groups={optionGroups}
                   mode={mode}
+                  packYear={seasonPack.year}
                   onSelect={handleSelect}
                   disabled={isSpinning}
                 />
@@ -231,7 +262,10 @@ export function Play() {
 
       {phase === 'bandit' && (
         <div className="max-w-5xl mx-auto px-4 py-8">
-          <SeasonBandit onComplete={(perk) => finishBandit(perk).catch(console.error)} />
+          <SeasonBandit
+            runSeed={runSeed}
+            onComplete={(perk) => finishBandit(perk).catch(console.error)}
+          />
           {simulationError && (
             <div className="text-center mt-4 space-y-3">
               <p className="text-f1-red text-sm">{simulationError}</p>
@@ -276,11 +310,12 @@ export function Play() {
         <div className="w-full px-3 sm:px-4 lg:px-6">
           <ResultsPanel
             result={result}
-            mode={mode}
             picks={picks}
+            shareMode={mode}
+            shareEraPolicy={simulationEraPolicy}
             onPlayAgain={() => {
               reset()
-              setMode(mode)
+              setMode(mode, eraPolicy)
               setTickerRound(0)
               setTickerPoints(0)
             }}

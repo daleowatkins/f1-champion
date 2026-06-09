@@ -968,6 +968,7 @@ async function main() {
     )
   }
 
+  buildDraftBadges(adminIndex)
   build2026SimulationData()
 
   fs.writeFileSync(path.join(OUT_DIR, 'spin-index.json'), JSON.stringify(spinIndex))
@@ -986,6 +987,95 @@ async function main() {
   console.log(`Built ${spinIndex.length} spin entries across ${YEAR_MIN}-${YEAR_MAX}`)
 }
 
+type DraftPoolPack = {
+  year: number
+  constructorId: string
+  draftPool: Record<AdminSlot, { id: string; name: string; rating: number; ratingBreakdown?: unknown }[]>
+}
+
+function carRatingFromPool(pool: DraftPoolPack['draftPool']): number {
+  const chassis = pool.chassis[0]?.rating ?? 50
+  const engine = pool.engines[0]?.rating ?? 50
+  return Math.round((chassis + engine) / 2)
+}
+
+function patchPackWithYearOverrides(pack: DraftPoolPack, overrides: RatingOverridesFile): DraftPoolPack {
+  const { year, constructorId, draftPool } = pack
+  const patchSlot = (slot: AdminSlot) =>
+    draftPool[slot].map((option) =>
+      applySlotOverride(option as Parameters<typeof applySlotOverride>[0], year, constructorId, slot, overrides),
+    )
+
+  return {
+    ...pack,
+    draftPool: {
+      drivers: patchSlot('drivers'),
+      chassis: patchSlot('chassis'),
+      engines: patchSlot('engines'),
+      teamPrincipals: patchSlot('teamPrincipals'),
+      pitTeams: patchSlot('pitTeams'),
+      devBudgets: patchSlot('devBudgets'),
+      reserves: patchSlot('reserves'),
+    },
+  }
+}
+
+const MIN_SEASONS_FOR_PRIME = 5
+
+function buildDraftBadges(adminIndex: AdminIndexEntry[]) {
+  const driverBest = new Map<string, { rating: number; years: number[] }>()
+  const driverSeasonCounts = new Map<string, Set<number>>()
+  const chassisPeak = new Map<string, number>()
+  const enginePeak = new Map<string, number>()
+
+  for (const entry of adminIndex) {
+    if (entry.slot === 'drivers') {
+      const seasons = driverSeasonCounts.get(entry.optionId) ?? new Set<number>()
+      seasons.add(entry.year)
+      driverSeasonCounts.set(entry.optionId, seasons)
+
+      const prev = driverBest.get(entry.optionId)
+      if (!prev || entry.rating > prev.rating) {
+        driverBest.set(entry.optionId, { rating: entry.rating, years: [entry.year] })
+      } else if (entry.rating === prev.rating) {
+        prev.years.push(entry.year)
+      }
+      continue
+    }
+    if (entry.slot === 'chassis') {
+      chassisPeak.set(entry.optionId, Math.max(chassisPeak.get(entry.optionId) ?? 0, entry.rating))
+    }
+    if (entry.slot === 'engines') {
+      enginePeak.set(entry.optionId, Math.max(enginePeak.get(entry.optionId) ?? 0, entry.rating))
+    }
+  }
+
+  const driverPrimeYears: Record<string, number[]> = {}
+  for (const [driverId, { years }] of driverBest) {
+    const seasonCount = driverSeasonCounts.get(driverId)?.size ?? 0
+    if (seasonCount < MIN_SEASONS_FOR_PRIME) continue
+    driverPrimeYears[driverId] = years.sort((a, b) => a - b)
+  }
+
+  const topComponentIds = (peaks: Map<string, number>) =>
+    [...peaks.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 10)
+      .map(([id]) => id)
+
+  const payload = {
+    driverPrimeYears,
+    legend: {
+      chassis: topComponentIds(chassisPeak),
+      engines: topComponentIds(enginePeak),
+    },
+  }
+
+  const json = JSON.stringify(payload)
+  fs.writeFileSync(path.join(OUT_DIR, 'draft-badges.json'), json)
+  fs.writeFileSync(path.join(ROOT, 'src', 'data', 'draft-badges.json'), json)
+}
+
 function build2026SimulationData() {
   const srcYear = 2025
   const dstYear = 2026
@@ -994,6 +1084,7 @@ function build2026SimulationData() {
   if (!fs.existsSync(srcDir)) return
 
   ensureDir(dstDir)
+  const ratingOverrides = loadRatingOverrides()
 
   for (const file of fs.readdirSync(srcDir)) {
     if (!file.endsWith('.json') || file === 'grid.json') continue
@@ -1001,38 +1092,48 @@ function build2026SimulationData() {
     const updated = raw
       .replaceAll(String(srcYear), String(dstYear))
       .replaceAll(`-${srcYear}`, `-${dstYear}`)
-    fs.writeFileSync(path.join(dstDir, file), updated)
+    const pack = patchPackWithYearOverrides(JSON.parse(updated) as DraftPoolPack, ratingOverrides)
+    fs.writeFileSync(path.join(dstDir, file), JSON.stringify(pack))
+  }
+
+  const gridConfigPath = path.join(ROOT, 'data', 'curated', 'grid-2026-teams.json')
+  const gridConfig = JSON.parse(fs.readFileSync(gridConfigPath, 'utf-8')) as {
+    teams: { packId: string; id?: string; name?: string }[]
   }
 
   const templatePath = path.join(dstDir, 'mclaren.json')
   if (!fs.existsSync(templatePath)) return
-
   const template = JSON.parse(fs.readFileSync(templatePath, 'utf-8')) as {
     raceCount: number
     calendar: string[]
-    opponents: { id: string; name: string; strength: number }[]
+    constructorName: string
   }
 
   const teams: {
     id: string
     name: string
     strength: number
-    drivers: { id: string; name: string }[]
+    carRating: number
+    drivers: { id: string; name: string; rating: number }[]
   }[] = []
 
-  for (const opp of template.opponents) {
-    const oppPath = path.join(dstDir, `${opp.id}.json`)
+  for (const teamConfig of gridConfig.teams) {
+    const oppPath = path.join(dstDir, `${teamConfig.packId}.json`)
     if (!fs.existsSync(oppPath)) continue
-    const oppPack = JSON.parse(fs.readFileSync(oppPath, 'utf-8')) as {
-      draftPool: { chassis: { rating: number }[]; drivers: { id: string; name: string }[] }
+    const oppPack = JSON.parse(fs.readFileSync(oppPath, 'utf-8')) as DraftPoolPack & {
+      constructorName: string
     }
+    const gridId = teamConfig.id ?? teamConfig.packId
+    const carRating = carRatingFromPool(oppPack.draftPool)
     teams.push({
-      id: opp.id,
-      name: opp.name,
-      strength: oppPack.draftPool.chassis[0]?.rating ?? opp.strength,
+      id: gridId,
+      name: teamConfig.name ?? oppPack.constructorName,
+      strength: carRating,
+      carRating,
       drivers: oppPack.draftPool.drivers.slice(0, 2).map((d) => ({
-        id: `${opp.id}__${d.id}`,
+        id: `${gridId}__${d.id}`,
         name: d.name,
+        rating: d.rating,
       })),
     })
   }

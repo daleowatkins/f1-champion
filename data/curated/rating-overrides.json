@@ -1,4 +1,49 @@
 {
   "version": 1,
-  "overrides": {}
+  "overrides": {
+    "2026/mercedes/drivers/kimi-antonelli": {
+      "rating": 91,
+      "note": "Early 2026 form — championship leader"
+    },
+    "2026/mercedes/drivers/george-russell": {
+      "rating": 85,
+      "note": "Early 2026 form — strong but behind Antonelli"
+    },
+    "2026/mercedes/chassis/mercedes-f1-w16": {
+      "rating": 92,
+      "note": "Early 2026 grid-leading package"
+    },
+    "2026/mercedes/engines/mercedes-amg-f1-m16-16-v6-t-h": {
+      "rating": 93,
+      "note": "Early 2026 grid-leading power unit"
+    },
+    "2026/red-bull/drivers/max-verstappen": {
+      "rating": 87,
+      "note": "Elite talent but car not matching Mercedes in early 2026"
+    },
+    "2026/red-bull/chassis/red-bull-rb21": {
+      "rating": 79,
+      "note": "Early 2026 car struggles vs front runners"
+    },
+    "2026/red-bull/engines/honda-rbpt-rbpth002-16-v6-t-h": {
+      "rating": 74,
+      "note": "Early 2026 PU deficit"
+    },
+    "2026/ferrari/drivers/charles-leclerc": {
+      "rating": 82,
+      "note": "Early 2026 — off the Mercedes pace"
+    },
+    "2026/ferrari/drivers/lewis-hamilton": {
+      "rating": 79,
+      "note": "Early 2026 — adapting, behind Antonelli"
+    },
+    "2026/ferrari/chassis/ferrari-sf-25": {
+      "rating": 78,
+      "note": "Early 2026 midfield-front car"
+    },
+    "2026/ferrari/engines/ferrari-066-12-16-v6-t-h": {
+      "rating": 76,
+      "note": "Early 2026 engine form"
+    }
+  }
 }

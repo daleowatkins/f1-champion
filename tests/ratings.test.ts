@@ -10,14 +10,14 @@ import {
 import type { DraftPick } from '../src/types/game'
 
 const mockPicks: DraftPick[] = [
-  { slot: 'driver1', option: { id: 'd1', name: 'Driver 1', rating: 90 }, sourceConstructorId: 'x', sourceConstructorName: 'X', sourceYear: 2020 },
-  { slot: 'driver2', option: { id: 'd2', name: 'Driver 2', rating: 80 }, sourceConstructorId: 'x', sourceConstructorName: 'X', sourceYear: 2020 },
-  { slot: 'chassis', option: { id: 'c1', name: 'Chassis', rating: 85 }, sourceConstructorId: 'x', sourceConstructorName: 'X', sourceYear: 2020 },
-  { slot: 'engine', option: { id: 'e1', name: 'Engine', rating: 88 }, sourceConstructorId: 'x', sourceConstructorName: 'X', sourceYear: 2020 },
-  { slot: 'teamPrincipal', option: { id: 'tp', name: 'TP', rating: 82 }, sourceConstructorId: 'x', sourceConstructorName: 'X', sourceYear: 2020 },
-  { slot: 'engineerCrew', option: { id: 'eng', name: 'Engineers', rating: 75 }, sourceConstructorId: 'x', sourceConstructorName: 'X', sourceYear: 2020 },
-  { slot: 'devBudget', option: { id: 'bud', name: 'Budget', rating: 70 }, sourceConstructorId: 'x', sourceConstructorName: 'X', sourceYear: 2020 },
-  { slot: 'reserveDriver', option: { id: 'res', name: 'Reserve', rating: 60 }, sourceConstructorId: 'x', sourceConstructorName: 'X', sourceYear: 2020 },
+  { slot: 'driver1', option: { id: 'd1', name: 'Driver 1', rating: 90 }, sourceConstructorId: 'x', sourceConstructorName: 'X', sourceYear: 2020, historicalWccPosition: 3 },
+  { slot: 'driver2', option: { id: 'd2', name: 'Driver 2', rating: 80 }, sourceConstructorId: 'x', sourceConstructorName: 'X', sourceYear: 2020, historicalWccPosition: 3 },
+  { slot: 'chassis', option: { id: 'c1', name: 'Chassis', rating: 85 }, sourceConstructorId: 'x', sourceConstructorName: 'X', sourceYear: 2020, historicalWccPosition: 3 },
+  { slot: 'engine', option: { id: 'e1', name: 'Engine', rating: 88 }, sourceConstructorId: 'x', sourceConstructorName: 'X', sourceYear: 2020, historicalWccPosition: 3 },
+  { slot: 'teamPrincipal', option: { id: 'tp', name: 'TP', rating: 82 }, sourceConstructorId: 'x', sourceConstructorName: 'X', sourceYear: 2020, historicalWccPosition: 3 },
+  { slot: 'engineerCrew', option: { id: 'eng', name: 'Engineers', rating: 75 }, sourceConstructorId: 'x', sourceConstructorName: 'X', sourceYear: 2020, historicalWccPosition: 3 },
+  { slot: 'devBudget', option: { id: 'bud', name: 'Budget', rating: 70 }, sourceConstructorId: 'x', sourceConstructorName: 'X', sourceYear: 2020, historicalWccPosition: 3 },
+  { slot: 'reserveDriver', option: { id: 'res', name: 'Reserve', rating: 60 }, sourceConstructorId: 'x', sourceConstructorName: 'X', sourceYear: 2020, historicalWccPosition: 3 },
 ]
 
 describe('ratings', () => {

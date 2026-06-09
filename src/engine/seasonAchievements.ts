@@ -12,6 +12,12 @@ function isPodium(pos: number | 'DNF'): boolean {
   return typeof pos === 'number' && pos <= 3
 }
 
+function isOneTwoFinish(d1: number | 'DNF', d2: number | 'DNF'): boolean {
+  if (d1 === 'DNF' || d2 === 'DNF') return false
+  const sorted = [d1, d2].sort((a, b) => a - b)
+  return sorted[0] === 1 && sorted[1] === 2
+}
+
 export function computeSeasonAchievements(result: SeasonResult): SeasonAchievement[] {
   const raceCount = result.raceResults.length
   const podiumsEveryRace =
@@ -23,6 +29,9 @@ export function computeSeasonAchievements(result: SeasonResult): SeasonAchieveme
     (r) => r.driver1Position !== 'DNF' && r.driver2Position !== 'DNF',
   )
   const winEveryRace = raceCount > 0 && result.wins === raceCount
+  const totalDomination =
+    raceCount > 0 &&
+    result.raceResults.every((r) => isOneTwoFinish(r.driver1Position, r.driver2Position))
   const wdcWon = result.wdcPosition === 1
   const wccWon = result.wccPosition === 1
   const doubleChampion = wdcWon && wccWon
@@ -74,6 +83,15 @@ export function computeSeasonAchievements(result: SeasonResult): SeasonAchieveme
       detail: winEveryRace
         ? `Won all ${raceCount} races`
         : `${result.wins} of ${raceCount} race wins`,
+    },
+    {
+      id: 'total-domination',
+      label: 'Total Domination',
+      shortLabel: 'Total Domination',
+      achieved: totalDomination,
+      detail: totalDomination
+        ? 'Locked out the front row every race — 1-2 all season'
+        : 'Did not finish 1-2 in every race',
     },
   ]
 }

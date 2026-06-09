@@ -31,7 +31,7 @@ export const SLOT_LABELS: Record<SlotType, string> = {
   teamPrincipal: 'Team Principal',
   engineerCrew: 'Engineer Crew',
   devBudget: 'Development Budget',
-  reserveDriver: 'Reserved Driver',
+  reserveDriver: 'Development Driver',
 }
 
 export const DRIVER_PRIORITY_LABELS: Record<DriverPriority, string> = {
@@ -124,6 +124,18 @@ export interface DraftPick {
   sourceConstructorId: string
   sourceConstructorName: string
   sourceYear: number
+  historicalWccPosition: number
+}
+
+export type SimulationEraPolicy = '2026' | 'historical-first-spin'
+
+export type SimulationEraChoice =
+  | { type: '2026' }
+  | { type: 'historical'; constructorId: string; constructorName: string; year: number }
+
+export function parseEraPolicy(mode: GameMode, eraParam: string | null): SimulationEraPolicy {
+  if (mode === 'classic') return '2026'
+  return eraParam === 'historical' ? 'historical-first-spin' : '2026'
 }
 
 export interface TeamRatings {
@@ -167,8 +179,10 @@ export interface SimulationGrid {
   teams: {
     id: string
     name: string
+    /** @deprecated Use carRating — kept for older grid.json files */
     strength: number
-    drivers: { id: string; name: string }[]
+    carRating?: number
+    drivers: { id: string; name: string; rating?: number }[]
   }[]
 }
 
@@ -219,6 +233,8 @@ export interface SeasonResult {
   constructorName: string
   year: number
   seasonPerk: SeasonPerk | null
+  runSeed: number
+  simulationEra: SimulationEraChoice
 }
 
 export type GamePhase =

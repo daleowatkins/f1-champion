@@ -16,6 +16,7 @@ function withSource(pack: SeasonPack, slot: DraftPick['slot'], option: DraftPick
     sourceConstructorId: pack.constructorId,
     sourceConstructorName: pack.constructorName,
     sourceYear: pack.year,
+    historicalWccPosition: pack.historicalWccPosition,
   }
 }
 

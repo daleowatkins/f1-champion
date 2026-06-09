@@ -11,3 +11,115 @@
 body {
   @apply bg-f1-dark text-white min-h-screen font-sans antialiased;
 }
+
+.option-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.option-shine::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    120deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.65) 50%,
+    transparent 70%
+  );
+  background-size: 220% 100%;
+  animation: option-shine-sweep 2.8s linear infinite;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.option-shine-prime {
+  box-shadow:
+    0 0 18px rgba(255, 215, 0, 0.22),
+    inset 0 0 0 1px rgba(255, 215, 0, 0.35);
+}
+
+.option-shine-legend {
+  box-shadow:
+    0 0 18px rgba(0, 210, 190, 0.22),
+    inset 0 0 0 1px rgba(0, 210, 190, 0.35);
+}
+
+.option-shine-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 3;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.option-shine-badge-prime {
+  color: #1a1400;
+  background: linear-gradient(135deg, #ffe566, #f5c518, #ffd700);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.45);
+}
+
+.option-shine-badge-legend {
+  color: #001a17;
+  background: linear-gradient(135deg, #7fffd4, #00d2be, #00a896);
+  box-shadow: 0 0 10px rgba(0, 210, 190, 0.45);
+}
+
+@keyframes option-shine-sweep {
+  0% {
+    background-position: 220% 0;
+  }
+  100% {
+    background-position: -220% 0;
+  }
+}
+
+.trophy-cabinet-frame {
+  background: linear-gradient(180deg, #2a1810 0%, #1a1008 40%, #120a06 100%);
+  border: 3px solid #5c3d1e;
+  box-shadow:
+    inset 0 0 40px rgba(0, 0, 0, 0.6),
+    0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.trophy-cabinet-shelf {
+  min-height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #6b4423 0%, #3d2512 100%);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.trophy-slot {
+  background: radial-gradient(ellipse at center bottom, rgba(255, 215, 0, 0.08) 0%, transparent 70%);
+}
+
+.trophy-count-badge {
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #ffe566, #f5c518);
+  color: #1a1400;
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}

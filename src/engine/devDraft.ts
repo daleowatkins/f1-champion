@@ -1,5 +1,6 @@
 import type { DraftOption, DraftPick, DraftPool, SeasonPack, SlotType } from '../types/game'
 import { SLOT_ORDER } from '../types/game'
+import { reserveDriverOptions } from './spinPool'
 
 export interface SlotSource {
   year: number
@@ -23,7 +24,14 @@ export function packCacheKey(source: SlotSource): string {
   return `${source.year}/${source.constructorId}`
 }
 
-export function optionsForSlot(pack: SeasonPack, slot: SlotType): DraftOption[] {
+export function optionsForSlot(
+  pack: SeasonPack,
+  slot: SlotType,
+  usedDriverIds: Set<string> = new Set(),
+): DraftOption[] {
+  if (slot === 'reserveDriver') {
+    return reserveDriverOptions(pack.draftPool, usedDriverIds)
+  }
   return pack.draftPool[SLOT_POOL_KEY[slot]] as DraftOption[]
 }
 
@@ -38,6 +46,7 @@ export function buildDraftPick(
     sourceConstructorId: pack.constructorId,
     sourceConstructorName: pack.constructorName,
     sourceYear: pack.year,
+    historicalWccPosition: pack.historicalWccPosition,
   }
 }
 
@@ -52,9 +61,11 @@ export function autoFillBest(
     const pack = packs[packCacheKey(sources[slot])]
     if (!pack) continue
 
-    const options = [...optionsForSlot(pack, slot)].sort((a, b) => b.rating - a.rating)
     const isDriverSlot =
       slot === 'driver1' || slot === 'driver2' || slot === 'reserveDriver'
+    const options = [...optionsForSlot(pack, slot, usedDriverIds)].sort(
+      (a, b) => b.rating - a.rating,
+    )
 
     const pick = options.find((o) => !isDriverSlot || !usedDriverIds.has(o.id))
     if (!pick) continue
@@ -80,7 +91,12 @@ export function selectionToPicks(
     const pack = packs[packCacheKey(sources[slot])]
     if (!pack) return null
 
-    const option = optionsForSlot(pack, slot).find((o) => o.id === optionId)
+    const usedDriverIds = new Set(
+      picks
+        .filter((p) => p.slot === 'driver1' || p.slot === 'driver2')
+        .map((p) => p.option.id),
+    )
+    const option = optionsForSlot(pack, slot, usedDriverIds).find((o) => o.id === optionId)
     if (!option) return null
 
     picks.push(buildDraftPick(slot, option, pack))

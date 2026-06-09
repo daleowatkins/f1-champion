@@ -7,10 +7,12 @@ import {
   type BanditSpinResult,
   type BanditSymbolId,
 } from '../engine/bandit'
+import { deriveSeed, seededRandom } from '../lib/runSeed'
 import { SEASON_PERK_DESCRIPTIONS, SEASON_PERK_LABELS, type SeasonPerk } from '../types/game'
 
 interface Props {
   onComplete: (perk: SeasonPerk | null) => void
+  runSeed?: number | null
 }
 
 const REEL_STRIP = [...BANDIT_SYMBOLS, ...BANDIT_SYMBOLS, ...BANDIT_SYMBOLS]
@@ -32,7 +34,7 @@ function SymbolTile({ id, large }: { id: BanditSymbolId; large?: boolean }) {
   )
 }
 
-export function SeasonBandit({ onComplete }: Props) {
+export function SeasonBandit({ onComplete, runSeed = null }: Props) {
   const [phase, setPhase] = useState<'ready' | 'spinning' | 'done'>('ready')
   const [displayReels, setDisplayReels] = useState<[BanditSymbolId, BanditSymbolId, BanditSymbolId]>([
     'car',
@@ -44,7 +46,11 @@ export function SeasonBandit({ onComplete }: Props) {
   const runSpin = useCallback(() => {
     if (phase !== 'ready') return
     setPhase('spinning')
-    const spinResult = spinBandit()
+    const rand =
+      runSeed !== null
+        ? seededRandom(deriveSeed(runSeed, 'bandit'))
+        : Math.random
+    const spinResult = spinBandit(rand)
     setResult(spinResult)
 
     const intervals: ReturnType<typeof setInterval>[] = []
@@ -83,7 +89,7 @@ export function SeasonBandit({ onComplete }: Props) {
       intervals.forEach(clearInterval)
       timeouts.forEach(clearTimeout)
     }
-  }, [phase])
+  }, [phase, runSeed])
 
   return (
     <div className="max-w-lg mx-auto text-center">

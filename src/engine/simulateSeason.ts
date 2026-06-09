@@ -7,13 +7,16 @@ import type {
   RaceResult,
   ResultTier,
   SeasonPack,
+  SeasonPerk,
   SeasonResult,
   SimulationGrid,
+  SimulationEraChoice,
 } from '../types/game'
 import { getEraRules, pointsForPosition } from './eraRules'
 import {
   computeCarRating,
   computeDevBudgetGrowth,
+  computeDriverRacePace,
   computeDriverStrengths,
   computeEngineerEffects,
   computeEngineerRating,
@@ -33,7 +36,6 @@ import {
   creativeRulesCarMultiplier,
   devGrowthMultiplier,
 } from './perks'
-import type { SeasonPerk } from '../types/game'
 
 function seededRandom(seed: number): () => number {
   let s = seed
@@ -111,14 +113,19 @@ function buildGridDrivers(
   ]
 
   for (const team of grid.teams) {
-    const factors = [1, 0.93]
+    const carRating = team.carRating ?? team.strength
     team.drivers.forEach((driver, index) => {
+      const strength =
+        driver.rating !== undefined
+          ? computeDriverRacePace(driver.rating, carRating)
+          : carRating * (index === 0 ? 1 : 0.93)
+
       drivers.push({
         id: driver.id,
         name: driver.name,
         teamId: team.id,
         teamName: team.name,
-        strength: team.strength * factors[index],
+        strength,
         isPlayer: false,
       })
     })
@@ -134,6 +141,7 @@ export function simulateSeason(
   seed: number = Math.floor(Math.random() * 1_000_000),
   driverPriority: DriverPriority = 'equal',
   seasonPerk: SeasonPerk | null = null,
+  meta: { runSeed?: number; simulationEra?: SimulationEraChoice } = {},
 ): SeasonResult {
   const rand = seededRandom(seed)
   const rules = getEraRules(grid.year)
@@ -214,6 +222,7 @@ export function simulateSeason(
       rand,
       varianceMod,
       dnfChance,
+      engineerEffects,
     )
 
     const d1Pos = classification.positions.get('d1') ?? 'DNF'
@@ -322,6 +331,8 @@ export function simulateSeason(
     constructorName: 'Dream Team',
     year: grid.year,
     seasonPerk,
+    runSeed: meta.runSeed ?? seed,
+    simulationEra: meta.simulationEra ?? { type: '2026' },
   }
 }
 

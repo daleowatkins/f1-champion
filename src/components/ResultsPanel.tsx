@@ -1,35 +1,53 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import type { DraftPick, SeasonResult } from '../types/game'
-import { SEASON_PERK_DESCRIPTIONS, SEASON_PERK_LABELS, SLOT_LABELS } from '../types/game'
+import type { DraftPick, GameMode, SeasonResult, SimulationEraChoice, SimulationEraPolicy } from '../types/game'
+import { SEASON_PERK_DESCRIPTIONS, SEASON_PERK_LABELS } from '../types/game'
 import { computeSeasonAchievements } from '../engine/seasonAchievements'
 import { TIER_DESCRIPTIONS, TIER_LABELS } from '../engine/simulateSeason'
+import { formatShareUrl } from '../lib/runSeed'
+import { BeatHistoryPanel } from './BeatHistoryPanel'
+import { DraftRecapPanel } from './DraftRecapPanel'
 import { WikipediaSeasonTable } from './WikipediaSeasonTable'
+
+function eraLabel(era: SimulationEraChoice): string {
+  if (era.type === '2026') return '2026 Championship'
+  return `${era.constructorName} ${era.year}`
+}
 
 interface Props {
   result: SeasonResult
-  mode: 'classic' | 'expert'
   picks: DraftPick[]
+  shareMode?: GameMode
+  shareEraPolicy?: SimulationEraPolicy
   onPlayAgain: () => void
 }
 
-export function ResultsPanel({ result, mode, picks, onPlayAgain }: Props) {
+export function ResultsPanel({ result, picks, shareMode = 'classic', shareEraPolicy = '2026', onPlayAgain }: Props) {
   const [showFullGrid, setShowFullGrid] = useState(false)
+  const [seedCopied, setSeedCopied] = useState(false)
   const achievements = computeSeasonAchievements(result)
   const driverCount = result.standings.length
   const shareText = `${result.constructorName} ${result.year}: ${TIER_LABELS[result.tier]} — P${result.wccPosition} WCC, ${result.totalPoints} pts, ${result.wins} wins`
+  const seedUrl = formatShareUrl(result.runSeed, { mode: shareMode, eraPolicy: shareEraPolicy })
 
   const handleShare = async () => {
+    const fullText = `${shareText}\n\nReplay seed: ${result.runSeed}\n${seedUrl}`
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'F1 Champion Builder', text: shareText })
+        await navigator.share({ title: 'F1 Champion Builder', text: fullText, url: seedUrl })
       } catch {
         /* user cancelled */
       }
     } else {
-      await navigator.clipboard.writeText(shareText)
-      alert('Result copied to clipboard!')
+      await navigator.clipboard.writeText(fullText)
+      alert('Result and seed link copied to clipboard!')
     }
+  }
+
+  const handleCopySeed = async () => {
+    await navigator.clipboard.writeText(seedUrl)
+    setSeedCopied(true)
+    setTimeout(() => setSeedCopied(false), 2000)
   }
 
   return (
@@ -41,7 +59,9 @@ export function ResultsPanel({ result, mode, picks, onPlayAgain }: Props) {
       <div className="text-center mb-8 max-w-4xl mx-auto">
         <p className="text-sm text-white/50 uppercase tracking-widest">Season Complete</p>
         <h2 className="text-3xl font-bold mt-2">{result.constructorName}</h2>
-        <p className="text-white/50 text-sm">{result.year} season simulation</p>
+        <p className="text-white/50 text-sm">
+          {eraLabel(result.simulationEra)} · {result.year} season simulation
+        </p>
         <motion.div
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
@@ -104,24 +124,31 @@ export function ResultsPanel({ result, mode, picks, onPlayAgain }: Props) {
         ))}
       </div>
 
-      {mode === 'expert' && (
-        <div className="mb-6 rounded-lg bg-f1-card border border-white/10 p-4 max-w-4xl mx-auto">
-          <p className="text-xs text-white/40 uppercase mb-2">Ratings Revealed</p>
-          <div className="space-y-1 text-sm">
-            {picks.map((p) => (
-              <div key={p.slot} className="flex justify-between gap-2">
-                <span className="text-white/70 truncate">
-                  {SLOT_LABELS[p.slot]}: {p.option.name}
-                  <span className="text-white/40 text-xs block">
-                    {p.sourceConstructorName} {p.sourceYear}
-                  </span>
-                </span>
-                <span className="text-f1-accent font-bold shrink-0">{p.option.rating}</span>
-              </div>
-            ))}
-          </div>
+      <BeatHistoryPanel picks={picks} playerWcc={result.wccPosition} />
+
+      <DraftRecapPanel picks={picks} />
+
+      <div className="mb-6 max-w-4xl mx-auto rounded-xl border border-f1-accent/25 bg-f1-accent/5 p-5">
+        <p className="text-xs text-f1-accent uppercase tracking-widest mb-1">Share this run</p>
+        <h3 className="text-lg font-bold mb-2">Challenge seed</h3>
+        <p className="text-sm text-white/60 mb-3">
+          Same seed = same draft spins, bandit, and season sim. Send the link so friends can try to
+          beat your result.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <code className="rounded-lg bg-black/30 px-3 py-2 text-sm font-mono text-f1-accent">
+            {result.runSeed}
+          </code>
+          <button
+            type="button"
+            onClick={handleCopySeed}
+            className="rounded-full border border-white/25 px-4 py-2 text-sm hover:border-f1-accent"
+          >
+            {seedCopied ? 'Copied!' : 'Copy challenge link'}
+          </button>
         </div>
-      )}
+        <p className="text-xs text-white/35 mt-2 break-all font-mono">{seedUrl}</p>
+      </div>
 
       <div className="mb-6 w-full">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 px-1">

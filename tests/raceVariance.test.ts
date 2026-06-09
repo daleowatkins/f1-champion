@@ -28,6 +28,7 @@ function closeDriverPicks(pack: SeasonPack): DraftPick[] {
     sourceConstructorId: pack.constructorId,
     sourceConstructorName: pack.constructorName,
     sourceYear: pack.year,
+    historicalWccPosition: pack.historicalWccPosition,
   })
 
   return [

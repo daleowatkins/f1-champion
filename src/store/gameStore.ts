@@ -7,12 +7,15 @@ import type {
   SeasonPack,
   SeasonPerk,
   SeasonResult,
+  SimulationEraChoice,
+  SimulationEraPolicy,
   SimulationGrid,
   SlotType,
   SpinEntry,
 } from '../types/game'
 import { SLOT_ORDER } from '../types/game'
 import { simulateSeason } from '../engine/simulateSeason'
+import { buildHistoricalSimulationGrid } from '../engine/historicalGrid'
 import {
   DEFAULT_SIMULATION_GRID,
   loadSeasonPack,
@@ -22,6 +25,8 @@ import {
 } from '../engine/spinPool'
 import { RESPINS_PER_RUN } from '../config/gameConfig'
 import { isDevUnlocked } from '../config/devGate'
+import { archiveRun } from '../lib/trophyCabinet'
+import { createRunSeed, deriveSeed, pickSpinWithRand, seededRandom } from '../lib/runSeed'
 
 interface GameState {
   phase: GamePhase
@@ -36,13 +41,19 @@ interface GameState {
   spinIndex: SpinEntry[]
   simulationError: string | null
   seasonPerk: SeasonPerk | null
+  runSeed: number | null
+  simulationEra: SimulationEraChoice
+  simulationEraPolicy: SimulationEraPolicy
+  respinsAtCurrentSlot: number
 
-  setMode: (mode: GameMode) => void
+  setMode: (mode: GameMode, eraPolicy?: SimulationEraPolicy) => void
+  setRunSeed: (seed: number | null) => void
   setDriverPriority: (priority: DriverPriority) => void
   initSpinIndex: () => Promise<void>
   startSpin: () => Promise<void>
   respinCurrent: () => Promise<void>
   selectPick: (slot: SlotType, option: DraftPick['option']) => Promise<void>
+  setSimulationEra: (era: SimulationEraChoice) => void
   finishBandit: (perk: SeasonPerk | null) => Promise<void>
   beginSimulation: () => Promise<void>
   runSimulation: () => void
@@ -58,12 +69,30 @@ export function allSlotsFilled(picks: DraftPick[]): boolean {
 const SPIN_DURATION_MS = 2800
 let simulationPromise: Promise<void> | null = null
 
-async function spinForSlot(spinIndex: SpinEntry[]): Promise<{
+function spinSeedFor(
+  runSeed: number | null,
+  pickCount: number,
+  respinsAtSlot: number,
+): number | null {
+  if (runSeed === null) return null
+  return deriveSeed(runSeed, `spin-${pickCount}-r${respinsAtSlot}`)
+}
+
+async function spinForSlot(
+  spinIndex: SpinEntry[],
+  runSeed: number | null,
+  pickCount: number,
+  respinsAtSlot: number,
+): Promise<{
   spinEntry: SpinEntry
   seasonPack: SeasonPack
 }> {
   const entries = spinIndex.length > 0 ? spinIndex : await loadSpinIndex()
-  const spinEntry = pickRandomSpin(entries)
+  const subSeed = spinSeedFor(runSeed, pickCount, respinsAtSlot)
+  const spinEntry =
+    subSeed !== null
+      ? pickSpinWithRand(entries, seededRandom(subSeed))
+      : pickRandomSpin(entries)
   const [, seasonPack] = await Promise.all([
     new Promise<void>((r) => setTimeout(r, SPIN_DURATION_MS)),
     loadSeasonPack(spinEntry.year, spinEntry.constructorId),
@@ -71,7 +100,23 @@ async function spinForSlot(spinIndex: SpinEntry[]): Promise<{
   return { spinEntry, seasonPack }
 }
 
-async function resolveSimulationGrid(cached: SimulationGrid | null): Promise<SimulationGrid> {
+function eraFromSpin(entry: SpinEntry): SimulationEraChoice {
+  return {
+    type: 'historical',
+    constructorId: entry.constructorId,
+    constructorName: entry.constructorName,
+    year: entry.year,
+  }
+}
+
+async function resolveSimulationGrid(
+  cached: SimulationGrid | null,
+  era: SimulationEraChoice,
+): Promise<SimulationGrid> {
+  if (era.type === 'historical') {
+    const pack = await loadSeasonPack(era.year, era.constructorId)
+    return buildHistoricalSimulationGrid(pack)
+  }
   if (cached?.teams?.length) return cached
   try {
     return await loadSimulationGrid()
@@ -93,10 +138,32 @@ export const useGameStore = create<GameState>((set, get) => ({
   spinIndex: [],
   simulationError: null,
   seasonPerk: null,
+  runSeed: null,
+  simulationEra: { type: '2026' },
+  simulationEraPolicy: '2026',
+  respinsAtCurrentSlot: 0,
 
-  setMode: (mode) => set({ mode, phase: 'priority', driverPriority: null }),
+  setMode: (mode, eraPolicy = '2026') => {
+    const policy = mode === 'classic' ? '2026' : eraPolicy
+    set({
+      mode,
+      phase: 'priority',
+      driverPriority: null,
+      simulationEraPolicy: policy,
+      simulationEra: { type: '2026' },
+    })
+  },
 
-  setDriverPriority: (priority) => set({ driverPriority: priority, phase: 'spin' }),
+  setRunSeed: (seed) => set({ runSeed: seed }),
+
+  setDriverPriority: (priority) => {
+    const { runSeed } = get()
+    set({
+      driverPriority: priority,
+      phase: 'spin',
+      runSeed: runSeed ?? createRunSeed(),
+    })
+  },
 
   initSpinIndex: async () => {
     const [spinIndex, simulationGrid] = await Promise.all([
@@ -110,10 +177,14 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   startSpin: async () => {
-    const { spinIndex, simulationGrid } = get()
-    set({ phase: 'spinning' })
-    const { spinEntry, seasonPack } = await spinForSlot(spinIndex)
+    const { spinIndex, simulationGrid, runSeed, simulationEraPolicy } = get()
+    set({ phase: 'spinning', respinsAtCurrentSlot: 0 })
+    const { spinEntry, seasonPack } = await spinForSlot(spinIndex, runSeed, 0, 0)
     const entries = spinIndex.length > 0 ? spinIndex : await loadSpinIndex()
+    const simulationEra: SimulationEraChoice =
+      simulationEraPolicy === 'historical-first-spin'
+        ? eraFromSpin(spinEntry)
+        : { type: '2026' }
     set({
       spinEntry,
       seasonPack,
@@ -125,23 +196,34 @@ export const useGameStore = create<GameState>((set, get) => ({
       simulationGrid: simulationGrid ?? get().simulationGrid,
       respinsUsed: 0,
       seasonPerk: null,
+      simulationEra,
+      respinsAtCurrentSlot: 0,
     })
   },
 
   respinCurrent: async () => {
-    const { respinsUsed, spinIndex, picks } = get()
+    const { respinsUsed, spinIndex, picks, runSeed, respinsAtCurrentSlot } = get()
     const maxRespins = isDevUnlocked() ? Number.POSITIVE_INFINITY : RESPINS_PER_RUN
     if (respinsUsed >= maxRespins) return
+    const nextRespin = respinsAtCurrentSlot + 1
     set({ phase: 'spinning' })
-    const { spinEntry, seasonPack } = await spinForSlot(spinIndex)
+    const { spinEntry, seasonPack } = await spinForSlot(
+      spinIndex,
+      runSeed,
+      picks.length,
+      nextRespin,
+    )
     set({
       spinEntry,
       seasonPack,
       phase: 'draft',
       picks,
       respinsUsed: respinsUsed + 1,
+      respinsAtCurrentSlot: nextRespin,
     })
   },
+
+  setSimulationEra: (era) => set({ simulationEra: era }),
 
   finishBandit: async (perk) => {
     set({ seasonPerk: perk })
@@ -149,8 +231,16 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   beginSimulation: async () => {
-    const { picks, driverPriority, simulationGrid: cachedGrid, phase, result, seasonPerk } =
-      get()
+    const {
+      picks,
+      driverPriority,
+      simulationGrid: cachedGrid,
+      phase,
+      result,
+      seasonPerk,
+      runSeed,
+      simulationEra,
+    } = get()
     if (!allSlotsFilled(picks)) return
     if (phase === 'simulate' && result) return
     if (simulationPromise) return simulationPromise
@@ -159,13 +249,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       set({ simulationError: null })
 
       try {
-        const simulationGrid = await resolveSimulationGrid(cachedGrid)
+        const simulationGrid = await resolveSimulationGrid(cachedGrid, simulationEra)
+        const simSeed =
+          runSeed !== null ? deriveSeed(runSeed, 'sim') : Math.floor(Math.random() * 1_000_000)
         const seasonResult = simulateSeason(
           simulationGrid,
           picks,
-          undefined,
+          simSeed,
           driverPriority ?? 'equal',
           seasonPerk,
+          { runSeed: runSeed ?? simSeed, simulationEra },
         )
         set({
           result: seasonResult,
@@ -178,7 +271,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       } catch (err) {
         console.error('Failed to start simulation', err)
         set({
-          phase: get().seasonPerk !== null || get().phase === 'bandit' ? 'bandit' : 'draft',
+          phase: 'bandit',
           simulationError: 'Could not start the season. Please try again.',
         })
         throw err
@@ -191,7 +284,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   selectPick: async (slot, option) => {
-    const { picks, seasonPack, spinIndex } = get()
+    const { picks, seasonPack, spinIndex, runSeed } = get()
     if (!seasonPack) return
     if (picks.some((p) => p.slot === slot)) return
 
@@ -201,6 +294,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       sourceConstructorId: seasonPack.constructorId,
       sourceConstructorName: seasonPack.constructorName,
       sourceYear: seasonPack.year,
+      historicalWccPosition: seasonPack.historicalWccPosition,
     }
     const newPicks = [...picks, newPick]
 
@@ -211,9 +305,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       return
     }
 
-    set({ phase: 'spinning' })
+    set({ phase: 'spinning', respinsAtCurrentSlot: 0 })
     try {
-      const spun = await spinForSlot(spinIndex)
+      const spun = await spinForSlot(spinIndex, runSeed, newPicks.length, 0)
       set({
         spinEntry: spun.spinEntry,
         seasonPack: spun.seasonPack,
@@ -226,7 +320,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
   },
 
-  finishSimulation: () => set({ phase: 'results' }),
+  finishSimulation: () => {
+    const { result, picks, runSeed } = get()
+    if (result && runSeed !== null) {
+      archiveRun(result, picks, runSeed)
+    }
+    set({ phase: 'results' })
+  },
 
   runSimulation: async () => {
     await get().beginSimulation()
@@ -244,6 +344,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       respinsUsed: 0,
       simulationError: null,
       seasonPerk: null,
+      runSeed: null,
+      simulationEra: { type: '2026' },
+      simulationEraPolicy: '2026',
+      respinsAtCurrentSlot: 0,
     }),
 
   goToPhase: (phase) => set({ phase }),

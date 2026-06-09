@@ -1,0 +1,14 @@
+{
+  "teams": [
+    { "packId": "mclaren" },
+    { "packId": "mercedes" },
+    { "packId": "ferrari" },
+    { "packId": "red-bull" },
+    { "packId": "aston-martin" },
+    { "packId": "williams" },
+    { "packId": "alpine" },
+    { "packId": "haas" },
+    { "packId": "racing-bulls" },
+    { "packId": "kick-sauber", "id": "audi", "name": "Audi" }
+  ]
+}

@@ -20,6 +20,7 @@ function fullPicks(pack: SeasonPack): DraftPick[] {
     sourceConstructorId: pack.constructorId,
     sourceConstructorName: pack.constructorName,
     sourceYear: pack.year,
+    historicalWccPosition: pack.historicalWccPosition,
   })
   return [
     withSource('driver1', pool.drivers[0]),
