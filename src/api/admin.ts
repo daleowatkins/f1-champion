@@ -1,7 +1,8 @@
 import type { AdminIndexEntry, RatingOverridesFile } from '../types/admin'
+import { publicUrl } from '../lib/publicUrl'
 
 export async function loadAdminIndex(): Promise<AdminIndexEntry[]> {
-  const res = await fetch('/data/admin-ratings-index.json')
+  const res = await fetch(publicUrl('data/admin-ratings-index.json'))
   if (!res.ok) throw new Error('Failed to load admin index')
   return res.json()
 }

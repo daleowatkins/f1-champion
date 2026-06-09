@@ -197,6 +197,10 @@ Install Git: https://git-scm.com/download/win — close and reopen PowerShell.
 - Hard refresh: `Ctrl + Shift + R`  
 - Check the URL ends with your repo name: `...github.io/f1-champion/` (trailing slash is fine)
 
+### Spin button stuck on “Loading…”
+
+The game couldn’t fetch `data/spin-index.json` (usually a wrong path on GitHub Pages). Pull the latest code — data URLs must include the repo name (e.g. `/f1-champion/data/...`). Push again and wait for Actions to finish.
+
 ### Game says “Failed to load” data
 
 The first deploy must finish `build:data` successfully. Check the **Build for GitHub Pages** step in Actions didn’t fail.

@@ -8,6 +8,7 @@ import type {
   SpinEntry,
 } from '../types/game'
 import { SLOT_LABELS } from '../types/game'
+import { publicUrl } from '../lib/publicUrl'
 import bundledSimulationGrid from '../data/grid-2026.json'
 
 export const SIMULATION_YEAR = 2026
@@ -38,20 +39,20 @@ export function gridDriverId(teamId: string, driverId: string): string {
 }
 
 export async function loadSpinIndex(): Promise<SpinEntry[]> {
-  const res = await fetch('/data/spin-index.json')
+  const res = await fetch(publicUrl('data/spin-index.json'))
   if (!res.ok) throw new Error('Failed to load spin index')
   return res.json()
 }
 
 export async function loadSeasonPack(year: number, constructorId: string): Promise<SeasonPack> {
-  const res = await fetch(`/data/seasons/${year}/${constructorId}.json`)
+  const res = await fetch(publicUrl(`data/seasons/${year}/${constructorId}.json`))
   if (!res.ok) throw new Error(`Failed to load season pack for ${constructorId} ${year}`)
   return res.json()
 }
 
 export async function loadSimulationGrid(): Promise<SimulationGrid> {
   try {
-    const res = await fetch(`/data/seasons/${SIMULATION_YEAR}/grid.json`)
+    const res = await fetch(publicUrl(`data/seasons/${SIMULATION_YEAR}/grid.json`))
     if (res.ok) {
       const grid = await res.json()
       if (isValidSimulationGrid(grid)) return grid
