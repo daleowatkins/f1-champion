@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --color-f1-red: #e10600;
+  --color-f1-dark: #15151e;
+  --color-f1-card: #1f1f2e;
+  --color-f1-accent: #00d2be;
+}
+
+body {
+  @apply bg-f1-dark text-white min-h-screen font-sans antialiased;
+}

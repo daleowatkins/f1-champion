@@ -1,0 +1,16 @@
+[
+  { "constructorId": "mclaren", "year": 2004, "principals": [{ "id": "tp-dennis-2004", "name": "Ron Dennis", "rating": 88 }] },
+  { "constructorId": "ferrari", "year": 2004, "principals": [{ "id": "tp-todt-2004", "name": "Jean Todt", "rating": 90 }] },
+  { "constructorId": "renault", "year": 2004, "principals": [{ "id": "tp-briatore-2004", "name": "Flavio Briatore", "rating": 82 }] },
+  { "constructorId": "williams", "year": 2004, "principals": [{ "id": "tp-head-2004", "name": "Patrick Head", "rating": 78 }] },
+  { "constructorId": "bar", "year": 2004, "principals": [{ "id": "tp-brawn-2004", "name": "Ross Brawn", "rating": 85 }] },
+  { "constructorId": "mclaren", "year": 1988, "principals": [{ "id": "tp-dennis-1988", "name": "Ron Dennis", "rating": 92 }] },
+  { "constructorId": "ferrari", "year": 2000, "principals": [{ "id": "tp-todt-2000", "name": "Jean Todt", "rating": 88 }] },
+  { "constructorId": "mercedes", "year": 2021, "principals": [{ "id": "tp-wolff-2021", "name": "Toto Wolff", "rating": 94 }] },
+  { "constructorId": "red_bull", "year": 2021, "principals": [{ "id": "tp-horner-2021", "name": "Christian Horner", "rating": 90 }] },
+  { "constructorId": "brawn", "year": 2009, "principals": [{ "id": "tp-brawn-2009", "name": "Ross Brawn", "rating": 95 }] },
+  { "constructorId": "benetton", "year": 1994, "principals": [{ "id": "tp-briatore-1994", "name": "Flavio Briatore", "rating": 86 }] },
+  { "constructorId": "hesketh", "year": 1974, "principals": [{ "id": "tp-hesketh-1974", "name": "Lord Hesketh", "rating": 62 }] },
+  { "constructorId": "hesketh", "year": 1975, "principals": [{ "id": "tp-hesketh-1975", "name": "Lord Hesketh", "rating": 58 }] },
+  { "constructorId": "ferrari", "year": 1988, "principals": [{ "id": "tp-marchi-1988", "name": "John Barnard", "rating": 88 }] }
+]
