@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import type { DraftPick, SeasonResult } from '../types/game'
-import { SLOT_LABELS } from '../types/game'
+import { SEASON_PERK_DESCRIPTIONS, SEASON_PERK_LABELS, SLOT_LABELS } from '../types/game'
 import { computeSeasonAchievements } from '../engine/seasonAchievements'
 import { TIER_DESCRIPTIONS, TIER_LABELS } from '../engine/simulateSeason'
 import { WikipediaSeasonTable } from './WikipediaSeasonTable'
@@ -53,6 +53,13 @@ export function ResultsPanel({ result, mode, picks, onPlayAgain }: Props) {
           {TIER_LABELS[result.tier]}
         </motion.div>
         <p className="mt-2 text-white/60 text-sm">{TIER_DESCRIPTIONS[result.tier]}</p>
+        {result.seasonPerk && (
+          <div className="mt-4 mx-auto max-w-md rounded-xl border border-f1-accent/30 bg-f1-accent/10 px-4 py-3 text-left">
+            <p className="text-xs text-f1-accent uppercase tracking-widest">Season perk</p>
+            <p className="font-semibold text-white mt-1">{SEASON_PERK_LABELS[result.seasonPerk]}</p>
+            <p className="text-sm text-white/55 mt-1">{SEASON_PERK_DESCRIPTIONS[result.seasonPerk]}</p>
+          </div>
+        )}
       </div>
 
       <div className="mb-6 max-w-4xl mx-auto">

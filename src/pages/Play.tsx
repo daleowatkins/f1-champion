@@ -8,6 +8,7 @@ import { SeasonTicker } from '../components/SeasonTicker'
 import { ResultsPanel } from '../components/ResultsPanel'
 import { PrioritySelect } from '../components/PrioritySelect'
 import { TeamRatingsPanel } from '../components/TeamRatingsPanel'
+import { SeasonBandit } from '../components/SeasonBandit'
 import { getAllAvailableOptionGroups } from '../engine/spinPool'
 import { DRIVER_PRIORITY_LABELS, SLOT_ORDER } from '../types/game'
 import { RESPINS_PER_RUN } from '../config/gameConfig'
@@ -37,6 +38,7 @@ export function Play() {
     startSpin,
     respinCurrent,
     selectPick,
+    finishBandit,
     beginSimulation,
     finishSimulation,
     reset,
@@ -62,11 +64,6 @@ export function Play() {
   }, [phase])
 
   const draftComplete = allSlotsFilled(picks)
-
-  useEffect(() => {
-    if (phase !== 'draft' || !draftComplete || result) return
-    beginSimulation().catch(console.error)
-  }, [phase, draftComplete, result, beginSimulation, picks])
 
   const skipSimulation = useCallback(() => {
     if (!result) return
@@ -130,8 +127,9 @@ export function Play() {
   const driver2Name = picks.find((p) => p.slot === 'driver2')?.option.name ?? 'Driver 2'
 
   const showDraftLayout =
-    phase === 'draft' ||
-    (phase === 'spinning' && (seasonPack !== null || picks.length > 0))
+    phase !== 'bandit' &&
+    (phase === 'draft' ||
+      (phase === 'spinning' && (seasonPack !== null || picks.length > 0)))
 
   const showFirstSpin =
     phase === 'spin' || (phase === 'spinning' && picks.length === 0 && !seasonPack)
@@ -216,23 +214,6 @@ export function Play() {
                 </p>
               )
             )}
-            {draftComplete && phase === 'draft' && (
-              <div className="text-center py-4 space-y-3">
-                <p className="text-white/50 text-sm">Starting season...</p>
-                {simulationError && (
-                  <>
-                    <p className="text-f1-red text-sm">{simulationError}</p>
-                    <button
-                      type="button"
-                      onClick={() => beginSimulation().catch(console.error)}
-                      className="px-6 py-2 rounded-full bg-f1-red font-semibold text-white text-sm"
-                    >
-                      Retry simulation
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
           </div>
           <div className="hidden lg:block mt-6 lg:mt-0">
             <TeamRatingsPanel picks={picks} />
@@ -247,6 +228,24 @@ export function Play() {
       )}
 
       </div>
+
+      {phase === 'bandit' && (
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          <SeasonBandit onComplete={(perk) => finishBandit(perk).catch(console.error)} />
+          {simulationError && (
+            <div className="text-center mt-4 space-y-3">
+              <p className="text-f1-red text-sm">{simulationError}</p>
+              <button
+                type="button"
+                onClick={() => beginSimulation().catch(console.error)}
+                className="px-6 py-2 rounded-full bg-f1-red font-semibold text-white text-sm"
+              >
+                Retry simulation
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {phase === 'simulate' && result && simulationGrid && (
         <div className="w-full px-3 sm:px-4 lg:px-6">

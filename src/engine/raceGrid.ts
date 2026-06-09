@@ -1,4 +1,5 @@
 import type { EraRules } from '../types/game'
+import type { PlayerDnfProfile } from './perks'
 import { pointsForPosition } from './eraRules'
 
 export interface GridDriver {
@@ -8,6 +9,7 @@ export interface GridDriver {
   teamName: string
   strength: number
   isPlayer: boolean
+  dnfProfile?: PlayerDnfProfile
 }
 
 export interface RaceClassification {
@@ -16,13 +18,25 @@ export interface RaceClassification {
   fastestLapDriverId: string | null
 }
 
+function rollDnf(rand: () => number, profile?: PlayerDnfProfile, fallbackChance = 0): boolean {
+  if (profile) {
+    const { rates, blockMechanical, blockDriverError } = profile
+    if (!blockMechanical && rand() < rates.mechanical) return true
+    if (!blockDriverError && rand() < rates.driverError) return true
+    if (rand() < rates.crash) return true
+    return false
+  }
+  return rand() < fallbackChance
+}
+
 function samplePerformance(
   strength: number,
   rand: () => number,
   varianceMod: number,
   dnfChance: number,
+  dnfProfile?: PlayerDnfProfile,
 ): number | 'DNF' {
-  if (rand() < dnfChance) return 'DNF'
+  if (rollDnf(rand, dnfProfile, dnfChance)) return 'DNF'
 
   // Base pace noise — weekends vary, but car/driver gaps should still show over a season.
   const noise = (rand() - 0.5) * 26 * varianceMod
@@ -46,7 +60,7 @@ export function simulateRaceClassification(
 ): RaceClassification {
   const performances = drivers.map((d) => ({
     id: d.id,
-    perf: samplePerformance(d.strength, rand, varianceMod, dnfChance),
+    perf: samplePerformance(d.strength, rand, varianceMod, dnfChance, d.dnfProfile),
   }))
 
   const finishers = performances
@@ -62,7 +76,13 @@ export function simulateRaceClassification(
   const qualifying = [...drivers]
     .map((d) => ({
       id: d.id,
-      q: samplePerformance(d.strength * 1.02, rand, varianceMod * 0.7, dnfChance * 0.35),
+      q: samplePerformance(
+        d.strength * 1.02,
+        rand,
+        varianceMod * 0.7,
+        dnfChance * 0.35,
+        d.dnfProfile,
+      ),
     }))
     .filter((q) => q.q !== 'DNF')
     .sort((a, b) => (b.q as number) - (a.q as number))

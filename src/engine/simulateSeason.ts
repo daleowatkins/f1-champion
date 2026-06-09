@@ -27,6 +27,13 @@ import {
   simulateRaceClassification,
   teamPointsFromClassification,
 } from './raceGrid'
+import {
+  buildPlayerDnfProfile,
+  computePlayerDnfRates,
+  creativeRulesCarMultiplier,
+  devGrowthMultiplier,
+} from './perks'
+import type { SeasonPerk } from '../types/game'
 
 function seededRandom(seed: number): () => number {
   let s = seed
@@ -71,6 +78,7 @@ function buildGridDrivers(
   carRating: number,
   seasonCarBonus: number,
   formBoost: { d1: number; d2: number },
+  playerDnfProfile?: ReturnType<typeof buildPlayerDnfProfile>,
 ): GridDriver[] {
   const strengths = computeDriverStrengths(
     picks,
@@ -89,6 +97,7 @@ function buildGridDrivers(
       teamName: 'Dream Team',
       strength: strengths.d1,
       isPlayer: true,
+      dnfProfile: playerDnfProfile,
     },
     {
       id: 'd2',
@@ -97,6 +106,7 @@ function buildGridDrivers(
       teamName: 'Dream Team',
       strength: strengths.d2,
       isPlayer: true,
+      dnfProfile: playerDnfProfile,
     },
   ]
 
@@ -123,6 +133,7 @@ export function simulateSeason(
   picks: DraftPick[],
   seed: number = Math.floor(Math.random() * 1_000_000),
   driverPriority: DriverPriority = 'equal',
+  seasonPerk: SeasonPerk | null = null,
 ): SeasonResult {
   const rand = seededRandom(seed)
   const rules = getEraRules(grid.year)
@@ -133,13 +144,15 @@ export function simulateSeason(
   const engineerRating = computeEngineerRating(picks)
   const engineerEffects = computeEngineerEffects(engineerRating)
   const varianceMod = computeSupportVarianceModifier(supportRating)
-  const devGrowth = computeDevBudgetGrowth(picks)
+  const devGrowth = computeDevBudgetGrowth(picks) * devGrowthMultiplier(seasonPerk)
 
   const carReliability = carRating / 100
   const dnfChance = Math.min(
     0.22,
     engineerEffects.dnfChance + Math.max(0, 0.06 - carReliability * 0.05),
   )
+  const playerDnfRates = computePlayerDnfRates(engineerEffects, carReliability, varianceMod)
+  const playerDnfProfile = buildPlayerDnfProfile(playerDnfRates, seasonPerk)
 
   const raceCount = grid.raceCount
   const gridSize = grid.teams.length + 1
@@ -169,14 +182,16 @@ export function simulateSeason(
     const gp = grid.calendar[round] ?? `Round ${round + 1}`
     const seasonProgress = raceCount > 1 ? round / (raceCount - 1) : 0
     const seasonCarBonus = devGrowth * seasonProgress
+    const roundCarRating = carRating * creativeRulesCarMultiplier(round, seasonPerk)
 
     const gridDrivers = buildGridDrivers(
       grid,
       picks,
       driverPriority,
-      carRating,
+      roundCarRating,
       seasonCarBonus,
       formBoost,
+      playerDnfProfile,
     )
 
     if (round === 0) {
@@ -306,6 +321,7 @@ export function simulateSeason(
     teamRatings,
     constructorName: 'Dream Team',
     year: grid.year,
+    seasonPerk,
   }
 }
 

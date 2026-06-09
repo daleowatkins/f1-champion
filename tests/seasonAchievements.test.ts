@@ -22,6 +22,7 @@ function stubResult(overrides: Partial<SeasonResult>): SeasonResult {
     teamRatings: { driverLineup: 85, car: 88, support: 70 },
     constructorName: 'Dream Team',
     year: 2026,
+    seasonPerk: null,
     ...overrides,
   }
 }

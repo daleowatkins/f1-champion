@@ -5,6 +5,7 @@ import type {
   GameMode,
   GamePhase,
   SeasonPack,
+  SeasonPerk,
   SeasonResult,
   SimulationGrid,
   SlotType,
@@ -34,6 +35,7 @@ interface GameState {
   respinsUsed: number
   spinIndex: SpinEntry[]
   simulationError: string | null
+  seasonPerk: SeasonPerk | null
 
   setMode: (mode: GameMode) => void
   setDriverPriority: (priority: DriverPriority) => void
@@ -41,6 +43,7 @@ interface GameState {
   startSpin: () => Promise<void>
   respinCurrent: () => Promise<void>
   selectPick: (slot: SlotType, option: DraftPick['option']) => Promise<void>
+  finishBandit: (perk: SeasonPerk | null) => Promise<void>
   beginSimulation: () => Promise<void>
   runSimulation: () => void
   finishSimulation: () => void
@@ -89,6 +92,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   respinsUsed: 0,
   spinIndex: [],
   simulationError: null,
+  seasonPerk: null,
 
   setMode: (mode) => set({ mode, phase: 'priority', driverPriority: null }),
 
@@ -120,6 +124,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       spinIndex: entries,
       simulationGrid: simulationGrid ?? get().simulationGrid,
       respinsUsed: 0,
+      seasonPerk: null,
     })
   },
 
@@ -138,8 +143,14 @@ export const useGameStore = create<GameState>((set, get) => ({
     })
   },
 
+  finishBandit: async (perk) => {
+    set({ seasonPerk: perk })
+    await get().beginSimulation()
+  },
+
   beginSimulation: async () => {
-    const { picks, driverPriority, simulationGrid: cachedGrid, phase, result } = get()
+    const { picks, driverPriority, simulationGrid: cachedGrid, phase, result, seasonPerk } =
+      get()
     if (!allSlotsFilled(picks)) return
     if (phase === 'simulate' && result) return
     if (simulationPromise) return simulationPromise
@@ -154,6 +165,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           picks,
           undefined,
           driverPriority ?? 'equal',
+          seasonPerk,
         )
         set({
           result: seasonResult,
@@ -166,7 +178,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       } catch (err) {
         console.error('Failed to start simulation', err)
         set({
-          phase: 'draft',
+          phase: get().seasonPerk !== null || get().phase === 'bandit' ? 'bandit' : 'draft',
           simulationError: 'Could not start the season. Please try again.',
         })
         throw err
@@ -195,7 +207,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ picks: newPicks, simulationError: null })
 
     if (allSlotsFilled(newPicks)) {
-      await get().beginSimulation()
+      set({ picks: newPicks, phase: 'bandit', seasonPerk: null })
       return
     }
 
@@ -231,6 +243,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       result: null,
       respinsUsed: 0,
       simulationError: null,
+      seasonPerk: null,
     }),
 
   goToPhase: (phase) => set({ phase }),

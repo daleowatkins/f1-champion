@@ -179,6 +179,29 @@ export type ResultTier =
   | 'points-finisher'
   | 'backmarker'
 
+export type SeasonPerk =
+  | 'flawless-engineering'
+  | 'huge-sponsor'
+  | 'creative-rules'
+  | 'driver-wellbeing'
+
+export const SEASON_PERK_LABELS: Record<SeasonPerk, string> = {
+  'flawless-engineering': 'Flawless Engineering',
+  'huge-sponsor': 'Huge Sponsor',
+  'creative-rules': 'Creative Rule Interpretation',
+  'driver-wellbeing': 'Driver Wellbeing Coach',
+}
+
+export const SEASON_PERK_DESCRIPTIONS: Record<SeasonPerk, string> = {
+  'flawless-engineering':
+    'No retirements from pit stops or mechanical failure — drivers can still crash.',
+  'huge-sponsor': 'In-season development rate is doubled.',
+  'creative-rules':
+    'A hidden design advantage — +20% car performance for the first 5 races.',
+  'driver-wellbeing':
+    'Drivers stay consistent — no retirements from driver errors.',
+}
+
 export interface SeasonResult {
   tier: ResultTier
   wccPosition: number
@@ -195,6 +218,7 @@ export interface SeasonResult {
   teamRatings: TeamRatings
   constructorName: string
   year: number
+  seasonPerk: SeasonPerk | null
 }
 
 export type GamePhase =
@@ -203,5 +227,6 @@ export type GamePhase =
   | 'spin'
   | 'draft'
   | 'spinning'
+  | 'bandit'
   | 'simulate'
   | 'results'

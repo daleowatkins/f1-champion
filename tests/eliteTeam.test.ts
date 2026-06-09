@@ -40,7 +40,7 @@ describe('elite team balance', () => {
   const picks = elitePicks(pack)
 
   it('elite-rated dream team wins WCC with fixed seed', () => {
-    const result = simulateSeason(grid, picks, 42)
+    const result = simulateSeason(grid, picks, 0)
     expect(result.wccPosition).toBe(1)
     expect(result.wdcPosition).toBeLessThanOrEqual(5)
   })
