@@ -2,6 +2,7 @@
  * F1DB splitted ingest — builds spin-index and per-season draft packs.
  * Run: npm run build:data
  */
+import { execFileSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -92,6 +93,25 @@ function formatId(id: string): string {
     .join(' ')
 }
 
+function extractZip(zipPath: string, destinationDir: string) {
+  if (process.platform === 'win32') {
+    const psPath = zipPath.replace(/'/g, "''")
+    const psDest = destinationDir.replace(/'/g, "''")
+    execFileSync(
+      'powershell',
+      [
+        '-NoProfile',
+        '-Command',
+        `Expand-Archive -Path '${psPath}' -DestinationPath '${psDest}' -Force`,
+      ],
+      { stdio: 'inherit' },
+    )
+    return
+  }
+
+  execFileSync('unzip', ['-o', '-q', zipPath, '-d', destinationDir], { stdio: 'inherit' })
+}
+
 async function downloadF1DB() {
   ensureDir(CACHE_DIR)
   const zipPath = path.join(CACHE_DIR, 'f1db-json-splitted.zip')
@@ -103,11 +123,7 @@ async function downloadF1DB() {
   if (!res.ok) throw new Error(`Failed to download F1DB: ${res.status}`)
   fs.writeFileSync(zipPath, Buffer.from(await res.arrayBuffer()))
 
-  const { execSync } = await import('child_process')
-  execSync(
-    `powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${CACHE_DIR}' -Force"`,
-    { stdio: 'inherit' },
-  )
+  extractZip(zipPath, CACHE_DIR)
 }
 
 /** Historical factory / wealth tier for development budget (independent of single-season form). */

@@ -188,6 +188,7 @@ Install Git: https://git-scm.com/download/win — close and reopen PowerShell.
 1. Open **Actions** → click the failed run → expand the red step  
 2. Common fixes:
    - **npm ci failed** — run `npm install` locally, commit `package-lock.json`, push again  
+   - **powershell: not found** during `build:data` — pull the latest code (build script must use `unzip` on Linux, not PowerShell)  
    - **Build timed out** — wait and re-run: **Actions** → workflow → **Re-run all jobs**
 
 ### Site loads but is blank / no styles
