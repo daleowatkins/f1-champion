@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import type { DraftPick, SeasonResult } from '../types/game'
 import { SEASON_PERK_DESCRIPTIONS, SEASON_PERK_LABELS, SLOT_LABELS } from '../types/game'
@@ -13,7 +14,9 @@ interface Props {
 }
 
 export function ResultsPanel({ result, mode, picks, onPlayAgain }: Props) {
+  const [showFullGrid, setShowFullGrid] = useState(false)
   const achievements = computeSeasonAchievements(result)
+  const driverCount = result.standings.length
   const shareText = `${result.constructorName} ${result.year}: ${TIER_LABELS[result.tier]} — P${result.wccPosition} WCC, ${result.totalPoints} pts, ${result.wins} wins`
 
   const handleShare = async () => {
@@ -121,10 +124,21 @@ export function ResultsPanel({ result, mode, picks, onPlayAgain }: Props) {
       )}
 
       <div className="mb-6 w-full">
-        <h3 className="text-sm text-white/50 uppercase tracking-widest mb-3 px-1">
-          {result.year} World Championship — Driver standings
-        </h3>
-        <WikipediaSeasonTable result={result} />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 px-1">
+          <h3 className="text-sm text-white/50 uppercase tracking-widest">
+            {result.year} World Championship — Driver standings
+          </h3>
+          <button
+            type="button"
+            onClick={() => setShowFullGrid((expanded) => !expanded)}
+            className="shrink-0 rounded-full border border-white/25 px-4 py-2 text-sm text-white/80 hover:border-f1-accent hover:text-f1-accent transition-colors"
+          >
+            {showFullGrid
+              ? 'Show my drivers only'
+              : `Show full grid (${driverCount} drivers)`}
+          </button>
+        </div>
+        <WikipediaSeasonTable result={result} showAllDrivers={showFullGrid} />
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
