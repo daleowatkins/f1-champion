@@ -32,7 +32,14 @@ export function computeSeasonAchievements(result: SeasonResult): SeasonAchieveme
   const totalDomination =
     raceCount > 0 &&
     result.raceResults.every((r) => isOneTwoFinish(r.driver1Position, r.driver2Position))
-  const wdcWon = result.wdcPosition === 1
+  const bestWdcPosition = Math.min(result.wdcPosition, result.driver2WdcPosition)
+  const wdcWinner =
+    result.wdcPosition === 1
+      ? result.standings.find((d) => d.id === 'd1')
+      : result.driver2WdcPosition === 1
+        ? result.standings.find((d) => d.id === 'd2')
+        : null
+  const wdcWon = bestWdcPosition === 1
   const wccWon = result.wccPosition === 1
   const doubleChampion = wdcWon && wccWon
 
@@ -42,7 +49,9 @@ export function computeSeasonAchievements(result: SeasonResult): SeasonAchieveme
       label: 'World Drivers\' Champion',
       shortLabel: 'WDC',
       achieved: wdcWon,
-      detail: wdcWon ? 'Driver 1 won the title' : `Driver 1 finished P${result.wdcPosition}`,
+      detail: wdcWon
+        ? `${wdcWinner?.name ?? 'Your driver'} won the title`
+        : `Best driver finish P${bestWdcPosition}`,
     },
     {
       id: 'wc',
@@ -54,8 +63,8 @@ export function computeSeasonAchievements(result: SeasonResult): SeasonAchieveme
         : wdcWon
           ? `Won WDC but finished P${result.wccPosition} in WCC`
           : wccWon
-            ? `Won WCC but Driver 1 finished P${result.wdcPosition} in WDC`
-            : `P${result.wdcPosition} WDC, P${result.wccPosition} WCC`,
+            ? `Won WCC but best driver finish was P${bestWdcPosition} in WDC`
+            : `P${bestWdcPosition} WDC, P${result.wccPosition} WCC`,
     },
     {
       id: 'podium-every-race',

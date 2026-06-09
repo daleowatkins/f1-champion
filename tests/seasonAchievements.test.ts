@@ -8,6 +8,10 @@ function stubResult(overrides: Partial<SeasonResult>): SeasonResult {
     wccPosition: 2,
     wdcPosition: 2,
     driver2WdcPosition: 5,
+    standings: [
+      { id: 'd1', name: 'Driver 1', teamName: 'Dream Team', isPlayer: true, races: [], totalPoints: 300 },
+      { id: 'd2', name: 'Driver 2', teamName: 'Dream Team', isPlayer: true, races: [], totalPoints: 200 },
+    ],
     totalPoints: 300,
     wins: 5,
     podiums: 15,
@@ -30,6 +34,21 @@ function stubResult(overrides: Partial<SeasonResult>): SeasonResult {
 }
 
 describe('seasonAchievements', () => {
+  it('awards WDC when driver 2 wins the title', () => {
+    const d2Champion = computeSeasonAchievements(
+      stubResult({
+        wdcPosition: 2,
+        driver2WdcPosition: 1,
+        standings: [
+          { id: 'd1', name: 'Driver 1', teamName: 'Dream Team', isPlayer: true, races: [], totalPoints: 350 },
+          { id: 'd2', name: 'Driver 2', teamName: 'Dream Team', isPlayer: true, races: [], totalPoints: 400 },
+        ],
+      }),
+    )
+    expect(d2Champion.find((x) => x.id === 'wdc')?.achieved).toBe(true)
+    expect(d2Champion.find((x) => x.id === 'wdc')?.detail).toContain('Driver 2')
+  })
+
   it('treats WDC and WC as separate achievements', () => {
     const wdcOnly = computeSeasonAchievements(stubResult({ wdcPosition: 1, wccPosition: 2 }))
     expect(wdcOnly.find((x) => x.id === 'wdc')?.achieved).toBe(true)

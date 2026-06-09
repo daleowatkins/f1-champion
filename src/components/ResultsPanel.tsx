@@ -27,6 +27,11 @@ export function ResultsPanel({ result, picks, shareMode = 'classic', shareEraPol
   const [seedCopied, setSeedCopied] = useState(false)
   const achievements = computeSeasonAchievements(result)
   const driverCount = result.standings.length
+  const d1Name = picks.find((p) => p.slot === 'driver1')?.option.name ?? 'Driver 1'
+  const d2Name = picks.find((p) => p.slot === 'driver2')?.option.name ?? 'Driver 2'
+  const bestWdcPosition = Math.min(result.wdcPosition, result.driver2WdcPosition)
+  const wdcLeaderName =
+    result.wdcPosition <= result.driver2WdcPosition ? d1Name : d2Name
   const shareText = `${result.constructorName} ${result.year}: ${TIER_LABELS[result.tier]} — P${result.wccPosition} WCC, ${result.totalPoints} pts, ${result.wins} wins`
   const seedUrl = formatShareUrl(result.runSeed, { mode: shareMode, eraPolicy: shareEraPolicy })
 
@@ -106,10 +111,14 @@ export function ResultsPanel({ result, picks, shareMode = 'classic', shareEraPol
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 max-w-4xl mx-auto">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-2 max-w-4xl mx-auto">
         {[
           { label: 'WCC', value: `P${result.wccPosition}` },
-          { label: 'WDC (D1)', value: `P${result.wdcPosition}` },
+          {
+            label: 'WDC',
+            value: `P${bestWdcPosition}`,
+            hint: wdcLeaderName,
+          },
           { label: 'Points', value: result.totalPoints },
           { label: 'Wins', value: result.wins },
           { label: 'Podiums', value: result.podiums },
@@ -120,9 +129,15 @@ export function ResultsPanel({ result, picks, shareMode = 'classic', shareEraPol
           <div key={stat.label} className="rounded-lg bg-f1-card border border-white/10 p-3 text-center">
             <p className="text-xs text-white/40">{stat.label}</p>
             <p className="text-xl font-bold">{stat.value}</p>
+            {'hint' in stat && stat.hint && (
+              <p className="text-[10px] text-white/40 mt-0.5 truncate">{stat.hint}</p>
+            )}
           </div>
         ))}
       </div>
+      <p className="text-center text-xs text-white/40 mb-6 max-w-4xl mx-auto">
+        {d1Name} P{result.wdcPosition} WDC · {d2Name} P{result.driver2WdcPosition} WDC
+      </p>
 
       <BeatHistoryPanel picks={picks} playerWcc={result.wccPosition} />
 

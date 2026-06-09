@@ -30,6 +30,7 @@ import {
   simulateRaceClassification,
   teamPointsFromClassification,
 } from './raceGrid'
+import { championshipPosition, rankedStandings } from './standingsRank'
 import {
   buildPlayerDnfProfile,
   computePlayerDnfRates,
@@ -45,8 +46,13 @@ function seededRandom(seed: number): () => number {
   }
 }
 
-function determineTier(wccPosition: number, wdcPosition: number): ResultTier {
-  if (wccPosition === 1 && wdcPosition === 1) return 'double-champion'
+function determineTier(
+  wccPosition: number,
+  wdcPosition: number,
+  driver2WdcPosition: number,
+): ResultTier {
+  const bestWdc = Math.min(wdcPosition, driver2WdcPosition)
+  if (wccPosition === 1 && bestWdc === 1) return 'double-champion'
   if (wccPosition === 1) return 'constructors-champion'
   if (wccPosition <= 3) return 'podium-team'
   if (wccPosition <= 10) return 'points-finisher'
@@ -298,24 +304,24 @@ export function simulateSeason(
 
   const wccPosition = allTeams.findIndex((t) => t.id === 'player') + 1
 
-  const standings: DriverSeasonStanding[] = allDriverMeta
-    .map((d) => ({
+  const standings: DriverSeasonStanding[] = rankedStandings(
+    allDriverMeta.map((d) => ({
       id: d.id,
       name: d.name,
       teamName: d.teamName,
       isPlayer: d.isPlayer,
       races: driverRaceLog[d.id] ?? [],
       totalPoints: driverPoints[d.id] ?? 0,
-    }))
-    .sort((a, b) => b.totalPoints - a.totalPoints)
+    })),
+  )
 
-  const wdcPosition = standings.findIndex((d) => d.id === 'd1') + 1
-  const driver2WdcPosition = standings.findIndex((d) => d.id === 'd2') + 1
+  const wdcPosition = championshipPosition('d1', standings)
+  const driver2WdcPosition = championshipPosition('d2', standings)
 
   const reliability = carReliability * (engineerRating / 100)
 
   return {
-    tier: determineTier(wccPosition, wdcPosition),
+    tier: determineTier(wccPosition, wdcPosition, driver2WdcPosition),
     wccPosition,
     wdcPosition,
     driver2WdcPosition,
