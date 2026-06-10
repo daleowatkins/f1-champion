@@ -10,7 +10,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const distDir = path.join(__dirname, '..', 'dist')
 
 const isProjectPage = process.env.GITHUB_PAGES === 'true'
-const segmentCount = isProjectPage ? 1 : 0
+const customDomain = process.env.GITHUB_PAGES_CUSTOM_DOMAIN === 'true'
+const segmentCount = customDomain ? 0 : isProjectPage ? 1 : 0
 
 const redirect404 = `<!DOCTYPE html>
 <html lang="en">

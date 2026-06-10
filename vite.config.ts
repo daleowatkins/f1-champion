@@ -5,8 +5,11 @@ import tailwindcss from '@tailwindcss/vite'
 import { adminApiPlugin } from './scripts/vite-admin-api'
 
 const repoName = process.env.GITHUB_REPOSITORY_NAME ?? 'f1-champion'
+const customDomain = process.env.GITHUB_PAGES_CUSTOM_DOMAIN === 'true'
 const base =
-  process.env.GITHUB_PAGES === 'true' ? `/${repoName}/` : '/'
+  customDomain || process.env.GITHUB_PAGES !== 'true'
+    ? '/'
+    : `/${repoName}/`
 
 export default defineConfig({
   base,

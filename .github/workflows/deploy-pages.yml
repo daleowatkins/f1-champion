@@ -40,6 +40,7 @@ jobs:
         run: npm run build:pages
         env:
           GITHUB_PAGES: 'true'
+          GITHUB_PAGES_CUSTOM_DOMAIN: 'true'
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
           VITE_DEV_GATE_KEY: ${{ secrets.VITE_DEV_GATE_KEY }}
           VITE_RESPINS_PER_RUN: '3'
