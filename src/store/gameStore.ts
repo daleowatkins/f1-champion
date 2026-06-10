@@ -22,6 +22,7 @@ import {
   loadSimulationGrid,
   loadSpinIndex,
   pickRandomSpin,
+  spinEntryKey,
 } from '../engine/spinPool'
 import { RESPINS_PER_RUN } from '../config/gameConfig'
 import { isDevUnlocked } from '../config/devGate'
@@ -45,6 +46,7 @@ interface GameState {
   simulationEra: SimulationEraChoice
   simulationEraPolicy: SimulationEraPolicy
   respinsAtCurrentSlot: number
+  rolledSpinKeys: string[]
 
   setMode: (mode: GameMode, eraPolicy?: SimulationEraPolicy) => void
   setRunSeed: (seed: number | null) => void
@@ -78,21 +80,27 @@ function spinSeedFor(
   return deriveSeed(runSeed, `spin-${pickCount}-r${respinsAtSlot}`)
 }
 
+function rolledKeysSet(keys: string[]): Set<string> {
+  return new Set(keys)
+}
+
 async function spinForSlot(
   spinIndex: SpinEntry[],
   runSeed: number | null,
   pickCount: number,
   respinsAtSlot: number,
+  excludedKeys: string[],
 ): Promise<{
   spinEntry: SpinEntry
   seasonPack: SeasonPack
 }> {
   const entries = spinIndex.length > 0 ? spinIndex : await loadSpinIndex()
+  const excluded = rolledKeysSet(excludedKeys)
   const subSeed = spinSeedFor(runSeed, pickCount, respinsAtSlot)
   const spinEntry =
     subSeed !== null
-      ? pickSpinWithRand(entries, seededRandom(subSeed))
-      : pickRandomSpin(entries)
+      ? pickSpinWithRand(entries, seededRandom(subSeed), excluded)
+      : pickRandomSpin(entries, Math.random, excluded)
   const [, seasonPack] = await Promise.all([
     new Promise<void>((r) => setTimeout(r, SPIN_DURATION_MS)),
     loadSeasonPack(spinEntry.year, spinEntry.constructorId),
@@ -142,6 +150,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   simulationEra: { type: '2026' },
   simulationEraPolicy: '2026',
   respinsAtCurrentSlot: 0,
+  rolledSpinKeys: [],
 
   setMode: (mode, eraPolicy = '2026') => {
     const policy = mode === 'classic' ? '2026' : eraPolicy
@@ -179,7 +188,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   startSpin: async () => {
     const { spinIndex, simulationGrid, runSeed, simulationEraPolicy } = get()
     set({ phase: 'spinning', respinsAtCurrentSlot: 0 })
-    const { spinEntry, seasonPack } = await spinForSlot(spinIndex, runSeed, 0, 0)
+    const { spinEntry, seasonPack } = await spinForSlot(spinIndex, runSeed, 0, 0, [])
     const entries = spinIndex.length > 0 ? spinIndex : await loadSpinIndex()
     const simulationEra: SimulationEraChoice =
       simulationEraPolicy === 'historical-first-spin'
@@ -198,11 +207,12 @@ export const useGameStore = create<GameState>((set, get) => ({
       seasonPerk: null,
       simulationEra,
       respinsAtCurrentSlot: 0,
+      rolledSpinKeys: [spinEntryKey(spinEntry)],
     })
   },
 
   respinCurrent: async () => {
-    const { respinsUsed, spinIndex, picks, runSeed, respinsAtCurrentSlot } = get()
+    const { respinsUsed, spinIndex, picks, runSeed, respinsAtCurrentSlot, rolledSpinKeys } = get()
     const maxRespins = isDevUnlocked() ? Number.POSITIVE_INFINITY : RESPINS_PER_RUN
     if (respinsUsed >= maxRespins) return
     const nextRespin = respinsAtCurrentSlot + 1
@@ -212,7 +222,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       runSeed,
       picks.length,
       nextRespin,
+      rolledSpinKeys,
     )
+    const nextKey = spinEntryKey(spinEntry)
     set({
       spinEntry,
       seasonPack,
@@ -220,6 +232,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       picks,
       respinsUsed: respinsUsed + 1,
       respinsAtCurrentSlot: nextRespin,
+      rolledSpinKeys: rolledSpinKeys.includes(nextKey)
+        ? rolledSpinKeys
+        : [...rolledSpinKeys, nextKey],
     })
   },
 
@@ -307,11 +322,16 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     set({ phase: 'spinning', respinsAtCurrentSlot: 0 })
     try {
-      const spun = await spinForSlot(spinIndex, runSeed, newPicks.length, 0)
+      const { rolledSpinKeys } = get()
+      const spun = await spinForSlot(spinIndex, runSeed, newPicks.length, 0, rolledSpinKeys)
+      const nextKey = spinEntryKey(spun.spinEntry)
       set({
         spinEntry: spun.spinEntry,
         seasonPack: spun.seasonPack,
         phase: 'draft',
+        rolledSpinKeys: rolledSpinKeys.includes(nextKey)
+          ? rolledSpinKeys
+          : [...rolledSpinKeys, nextKey],
       })
     } catch (err) {
       console.error('Failed to load next spin', err)
@@ -348,6 +368,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       simulationEra: { type: '2026' },
       simulationEraPolicy: '2026',
       respinsAtCurrentSlot: 0,
+      rolledSpinKeys: [],
     }),
 
   goToPhase: (phase) => set({ phase }),

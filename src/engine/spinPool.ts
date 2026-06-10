@@ -64,17 +64,36 @@ export async function loadSimulationGrid(): Promise<SimulationGrid> {
   return DEFAULT_SIMULATION_GRID
 }
 
+export function spinEntryKey(entry: SpinEntry): string {
+  return `${entry.constructorId}-${entry.year}`
+}
+
+/** Teams already rolled this run — excluded from the next spin. */
+export function availableSpinEntries(
+  entries: SpinEntry[],
+  excluded: ReadonlySet<string>,
+): SpinEntry[] {
+  const filtered = entries.filter((e) => !excluded.has(spinEntryKey(e)))
+  return filtered.length > 0 ? filtered : entries
+}
+
+function orderedSpinPool(entries: SpinEntry[]): SpinEntry[] {
+  return [...entries].sort((a, b) => a.id.localeCompare(b.id))
+}
+
 export function pickRandomSpin(
   entries: SpinEntry[],
   rand: () => number = Math.random,
+  excluded: ReadonlySet<string> = new Set(),
 ): SpinEntry {
-  const totalWeight = entries.reduce((sum, e) => sum + e.weight, 0)
+  const pool = orderedSpinPool(availableSpinEntries(entries, excluded))
+  const totalWeight = pool.reduce((sum, e) => sum + e.weight, 0)
   let r = rand() * totalWeight
-  for (const entry of entries) {
+  for (const entry of pool) {
     r -= entry.weight
     if (r <= 0) return entry
   }
-  return entries[entries.length - 1]
+  return pool[pool.length - 1]
 }
 
 export interface PoolOption {

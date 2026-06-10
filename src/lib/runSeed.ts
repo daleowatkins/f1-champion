@@ -1,3 +1,4 @@
+import { pickRandomSpin } from '../engine/spinPool'
 import type { GameMode, SimulationEraPolicy, SpinEntry } from '../types/game'
 
 export function deriveSeed(base: number, label: string): number {
@@ -17,14 +18,12 @@ export function seededRandom(seed: number): () => number {
   }
 }
 
-export function pickSpinWithRand(entries: SpinEntry[], rand: () => number): SpinEntry {
-  const totalWeight = entries.reduce((sum, e) => sum + e.weight, 0)
-  let r = rand() * totalWeight
-  for (const entry of entries) {
-    r -= entry.weight
-    if (r <= 0) return entry
-  }
-  return entries[entries.length - 1]
+export function pickSpinWithRand(
+  entries: SpinEntry[],
+  rand: () => number,
+  excluded: ReadonlySet<string> = new Set(),
+): SpinEntry {
+  return pickRandomSpin(entries, rand, excluded)
 }
 
 export function createRunSeed(): number {
