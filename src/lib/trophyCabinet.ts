@@ -42,6 +42,8 @@ const ACHIEVEMENT_EMOJI: Record<string, string> = {
   'no-retirements': '🛡️',
   'win-every-race': '🔥',
   'total-domination': '⚡',
+  'wcc-no-respins': '🎯',
+  'wdc-no-respins': '🧊',
 }
 
 function loadState(): TrophyCabinetState {

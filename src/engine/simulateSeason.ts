@@ -147,7 +147,7 @@ export function simulateSeason(
   seed: number = Math.floor(Math.random() * 1_000_000),
   driverPriority: DriverPriority = 'equal',
   seasonPerk: SeasonPerk | null = null,
-  meta: { runSeed?: number; simulationEra?: SimulationEraChoice } = {},
+  meta: { runSeed?: number; simulationEra?: SimulationEraChoice; respinsUsed?: number } = {},
 ): SeasonResult {
   const rand = seededRandom(seed)
   const rules = getEraRules(grid.year)
@@ -339,6 +339,7 @@ export function simulateSeason(
     seasonPerk,
     runSeed: meta.runSeed ?? seed,
     simulationEra: meta.simulationEra ?? { type: '2026' },
+    respinsUsed: meta.respinsUsed ?? 0,
   }
 }
 

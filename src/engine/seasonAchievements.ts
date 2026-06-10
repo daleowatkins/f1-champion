@@ -42,6 +42,9 @@ export function computeSeasonAchievements(result: SeasonResult): SeasonAchieveme
   const wdcWon = bestWdcPosition === 1
   const wccWon = result.wccPosition === 1
   const doubleChampion = wdcWon && wccWon
+  const noRespins = result.respinsUsed === 0
+  const pureWcc = wccWon && noRespins
+  const pureWdc = wdcWon && noRespins
 
   return [
     {
@@ -101,6 +104,32 @@ export function computeSeasonAchievements(result: SeasonResult): SeasonAchieveme
       detail: totalDomination
         ? 'Locked out the front row every race — 1-2 all season'
         : 'Did not finish 1-2 in every race',
+    },
+    {
+      id: 'wcc-no-respins',
+      label: 'Pure Constructors Champion',
+      shortLabel: 'Pure WCC',
+      achieved: pureWcc,
+      detail: pureWcc
+        ? 'Won the constructors\' title without using a single respin'
+        : wccWon
+          ? `Won WCC but used ${result.respinsUsed} respin${result.respinsUsed === 1 ? '' : 's'}`
+          : noRespins
+            ? 'No respins used, but did not win the constructors\' title'
+            : `Used ${result.respinsUsed} respin${result.respinsUsed === 1 ? '' : 's'} during the draft`,
+    },
+    {
+      id: 'wdc-no-respins',
+      label: 'Pure Drivers\' Champion',
+      shortLabel: 'Pure WDC',
+      achieved: pureWdc,
+      detail: pureWdc
+        ? `${wdcWinner?.name ?? 'Your driver'} won the title without a single respin`
+        : wdcWon
+          ? `Won WDC but used ${result.respinsUsed} respin${result.respinsUsed === 1 ? '' : 's'}`
+          : noRespins
+            ? 'No respins used, but did not win the drivers\' title'
+            : `Used ${result.respinsUsed} respin${result.respinsUsed === 1 ? '' : 's'} during the draft`,
     },
   ]
 }

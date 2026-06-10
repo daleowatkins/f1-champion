@@ -235,6 +235,7 @@ export interface SeasonResult {
   seasonPerk: SeasonPerk | null
   runSeed: number
   simulationEra: SimulationEraChoice
+  respinsUsed: number
 }
 
 export type GamePhase =

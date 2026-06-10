@@ -68,29 +68,50 @@ export function spinEntryKey(entry: SpinEntry): string {
   return `${entry.constructorId}-${entry.year}`
 }
 
-/** Teams already rolled this run — excluded from the next spin. */
+/** ~20% extra weight for stronger seasons (higher base weight in spin-index). */
+const QUALITY_BOOST = 0.2
+
+export interface SpinPickOptions {
+  excludedKeys?: ReadonlySet<string>
+  excludedConstructorIds?: ReadonlySet<string>
+}
+
+/** Teams already rolled — excluded from the next spin. */
 export function availableSpinEntries(
   entries: SpinEntry[],
   excluded: ReadonlySet<string>,
+  excludedConstructorIds: ReadonlySet<string> = new Set(),
 ): SpinEntry[] {
-  const filtered = entries.filter((e) => !excluded.has(spinEntryKey(e)))
-  return filtered.length > 0 ? filtered : entries
+  const withoutKeys = entries.filter((e) => !excluded.has(spinEntryKey(e)))
+  const withoutConstructors = withoutKeys.filter(
+    (e) => !excludedConstructorIds.has(e.constructorId),
+  )
+  if (withoutConstructors.length > 0) return withoutConstructors
+  if (withoutKeys.length > 0) return withoutKeys
+  return entries
 }
 
-function orderedSpinPool(entries: SpinEntry[]): SpinEntry[] {
-  return [...entries].sort((a, b) => a.id.localeCompare(b.id))
+function effectiveSpinWeight(entry: SpinEntry, pool: SpinEntry[]): number {
+  const weights = pool.map((e) => e.weight)
+  const minW = Math.min(...weights)
+  const maxW = Math.max(...weights)
+  const range = maxW - minW || 1
+  const quality = (entry.weight - minW) / range
+  return entry.weight * (1 + QUALITY_BOOST * quality)
 }
 
 export function pickRandomSpin(
   entries: SpinEntry[],
   rand: () => number = Math.random,
-  excluded: ReadonlySet<string> = new Set(),
+  options: SpinPickOptions = {},
 ): SpinEntry {
-  const pool = orderedSpinPool(availableSpinEntries(entries, excluded))
-  const totalWeight = pool.reduce((sum, e) => sum + e.weight, 0)
+  const excluded = options.excludedKeys ?? new Set()
+  const excludedConstructors = options.excludedConstructorIds ?? new Set()
+  const pool = availableSpinEntries(entries, excluded, excludedConstructors)
+  const totalWeight = pool.reduce((sum, e) => sum + effectiveSpinWeight(e, pool), 0)
   let r = rand() * totalWeight
   for (const entry of pool) {
-    r -= entry.weight
+    r -= effectiveSpinWeight(entry, pool)
     if (r <= 0) return entry
   }
   return pool[pool.length - 1]

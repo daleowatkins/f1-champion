@@ -29,6 +29,7 @@ function stubResult(overrides: Partial<SeasonResult>): SeasonResult {
     seasonPerk: null,
     runSeed: 12345,
     simulationEra: { type: '2026' },
+    respinsUsed: 0,
     ...overrides,
   }
 }
@@ -98,6 +99,22 @@ describe('seasonAchievements', () => {
     expect(
       computeSeasonAchievements(oneMiss).find((x) => x.id === 'total-domination')?.achieved,
     ).toBe(false)
+  })
+
+  it('awards pure WCC and WDC only with zero respins', () => {
+    const pureChampion = computeSeasonAchievements(
+      stubResult({ wccPosition: 1, wdcPosition: 1, respinsUsed: 0 }),
+    )
+    expect(pureChampion.find((x) => x.id === 'wcc-no-respins')?.achieved).toBe(true)
+    expect(pureChampion.find((x) => x.id === 'wdc-no-respins')?.achieved).toBe(true)
+
+    const withRespins = computeSeasonAchievements(
+      stubResult({ wccPosition: 1, wdcPosition: 1, respinsUsed: 2 }),
+    )
+    expect(withRespins.find((x) => x.id === 'wcc-no-respins')?.achieved).toBe(false)
+    expect(withRespins.find((x) => x.id === 'wdc-no-respins')?.achieved).toBe(false)
+    expect(withRespins.find((x) => x.id === 'wdc')?.achieved).toBe(true)
+    expect(withRespins.find((x) => x.id === 'wc')?.achieved).toBe(true)
   })
 
   it('fails podiums when both drivers retire', () => {

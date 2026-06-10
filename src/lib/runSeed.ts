@@ -1,4 +1,4 @@
-import { pickRandomSpin } from '../engine/spinPool'
+import { pickRandomSpin, type SpinPickOptions } from '../engine/spinPool'
 import type { GameMode, SimulationEraPolicy, SpinEntry } from '../types/game'
 
 export function deriveSeed(base: number, label: string): number {
@@ -21,9 +21,9 @@ export function seededRandom(seed: number): () => number {
 export function pickSpinWithRand(
   entries: SpinEntry[],
   rand: () => number,
-  excluded: ReadonlySet<string> = new Set(),
+  options: SpinPickOptions = {},
 ): SpinEntry {
-  return pickRandomSpin(entries, rand, excluded)
+  return pickRandomSpin(entries, rand, options)
 }
 
 export function createRunSeed(): number {
@@ -51,4 +51,42 @@ export function formatShareUrl(
     params.set('era', 'historical')
   }
   return `${base}/play?${params}`
+}
+
+export function buildChallengeShareContent(options: {
+  tierLabel: string
+  year: number
+  wccPosition: number
+  bestWdcPosition: number
+  totalPoints: number
+  wins: number
+  runSeed: number
+  seedUrl: string
+}): { title: string; text: string; url: string } {
+  const {
+    tierLabel,
+    year,
+    wccPosition,
+    bestWdcPosition,
+    totalPoints,
+    wins,
+    runSeed,
+    seedUrl,
+  } = options
+
+  const text = `Think you can beat my F1 Champion season?
+
+${year} — ${tierLabel}
+P${wccPosition} WCC · P${bestWdcPosition} WDC · ${totalPoints} pts · ${wins} wins
+
+Play the same seed and try to beat me:
+${seedUrl}
+
+Seed: ${runSeed}`
+
+  return {
+    title: 'Beat my F1 Champion run',
+    text,
+    url: seedUrl,
+  }
 }

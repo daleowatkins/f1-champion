@@ -47,6 +47,7 @@ interface GameState {
   simulationEraPolicy: SimulationEraPolicy
   respinsAtCurrentSlot: number
   rolledSpinKeys: string[]
+  slotRolledConstructorIds: string[]
 
   setMode: (mode: GameMode, eraPolicy?: SimulationEraPolicy) => void
   setRunSeed: (seed: number | null) => void
@@ -84,23 +85,43 @@ function rolledKeysSet(keys: string[]): Set<string> {
   return new Set(keys)
 }
 
+function recordRoll(
+  rolledSpinKeys: string[],
+  slotRolledConstructorIds: string[],
+  entry: SpinEntry,
+): { rolledSpinKeys: string[]; slotRolledConstructorIds: string[] } {
+  const key = spinEntryKey(entry)
+  return {
+    rolledSpinKeys: rolledSpinKeys.includes(key) ? rolledSpinKeys : [...rolledSpinKeys, key],
+    slotRolledConstructorIds: slotRolledConstructorIds.includes(entry.constructorId)
+      ? slotRolledConstructorIds
+      : [...slotRolledConstructorIds, entry.constructorId],
+  }
+}
+
 async function spinForSlot(
   spinIndex: SpinEntry[],
   runSeed: number | null,
   pickCount: number,
   respinsAtSlot: number,
   excludedKeys: string[],
+  excludedConstructorIds: string[],
+  randomRespin = false,
 ): Promise<{
   spinEntry: SpinEntry
   seasonPack: SeasonPack
 }> {
   const entries = spinIndex.length > 0 ? spinIndex : await loadSpinIndex()
-  const excluded = rolledKeysSet(excludedKeys)
-  const subSeed = spinSeedFor(runSeed, pickCount, respinsAtSlot)
+  const pickOptions = {
+    excludedKeys: rolledKeysSet(excludedKeys),
+    excludedConstructorIds: rolledKeysSet(excludedConstructorIds),
+  }
+  const subSeed =
+    !randomRespin && runSeed !== null ? spinSeedFor(runSeed, pickCount, respinsAtSlot) : null
   const spinEntry =
     subSeed !== null
-      ? pickSpinWithRand(entries, seededRandom(subSeed), excluded)
-      : pickRandomSpin(entries, Math.random, excluded)
+      ? pickSpinWithRand(entries, seededRandom(subSeed), pickOptions)
+      : pickRandomSpin(entries, Math.random, pickOptions)
   const [, seasonPack] = await Promise.all([
     new Promise<void>((r) => setTimeout(r, SPIN_DURATION_MS)),
     loadSeasonPack(spinEntry.year, spinEntry.constructorId),
@@ -151,6 +172,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   simulationEraPolicy: '2026',
   respinsAtCurrentSlot: 0,
   rolledSpinKeys: [],
+  slotRolledConstructorIds: [],
 
   setMode: (mode, eraPolicy = '2026') => {
     const policy = mode === 'classic' ? '2026' : eraPolicy
@@ -188,12 +210,21 @@ export const useGameStore = create<GameState>((set, get) => ({
   startSpin: async () => {
     const { spinIndex, simulationGrid, runSeed, simulationEraPolicy } = get()
     set({ phase: 'spinning', respinsAtCurrentSlot: 0 })
-    const { spinEntry, seasonPack } = await spinForSlot(spinIndex, runSeed, 0, 0, [])
+    const { spinEntry, seasonPack } = await spinForSlot(
+      spinIndex,
+      runSeed,
+      0,
+      0,
+      [],
+      [],
+      false,
+    )
     const entries = spinIndex.length > 0 ? spinIndex : await loadSpinIndex()
     const simulationEra: SimulationEraChoice =
       simulationEraPolicy === 'historical-first-spin'
         ? eraFromSpin(spinEntry)
         : { type: '2026' }
+    const rollRecord = recordRoll([], [], spinEntry)
     set({
       spinEntry,
       seasonPack,
@@ -207,12 +238,21 @@ export const useGameStore = create<GameState>((set, get) => ({
       seasonPerk: null,
       simulationEra,
       respinsAtCurrentSlot: 0,
-      rolledSpinKeys: [spinEntryKey(spinEntry)],
+      rolledSpinKeys: rollRecord.rolledSpinKeys,
+      slotRolledConstructorIds: rollRecord.slotRolledConstructorIds,
     })
   },
 
   respinCurrent: async () => {
-    const { respinsUsed, spinIndex, picks, runSeed, respinsAtCurrentSlot, rolledSpinKeys } = get()
+    const {
+      respinsUsed,
+      spinIndex,
+      picks,
+      runSeed,
+      respinsAtCurrentSlot,
+      rolledSpinKeys,
+      slotRolledConstructorIds,
+    } = get()
     const maxRespins = isDevUnlocked() ? Number.POSITIVE_INFINITY : RESPINS_PER_RUN
     if (respinsUsed >= maxRespins) return
     const nextRespin = respinsAtCurrentSlot + 1
@@ -223,8 +263,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       picks.length,
       nextRespin,
       rolledSpinKeys,
+      slotRolledConstructorIds,
+      true,
     )
-    const nextKey = spinEntryKey(spinEntry)
+    const rollRecord = recordRoll(rolledSpinKeys, slotRolledConstructorIds, spinEntry)
     set({
       spinEntry,
       seasonPack,
@@ -232,9 +274,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       picks,
       respinsUsed: respinsUsed + 1,
       respinsAtCurrentSlot: nextRespin,
-      rolledSpinKeys: rolledSpinKeys.includes(nextKey)
-        ? rolledSpinKeys
-        : [...rolledSpinKeys, nextKey],
+      rolledSpinKeys: rollRecord.rolledSpinKeys,
+      slotRolledConstructorIds: rollRecord.slotRolledConstructorIds,
     })
   },
 
@@ -255,6 +296,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       seasonPerk,
       runSeed,
       simulationEra,
+      respinsUsed,
     } = get()
     if (!allSlotsFilled(picks)) return
     if (phase === 'simulate' && result) return
@@ -273,7 +315,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           simSeed,
           driverPriority ?? 'equal',
           seasonPerk,
-          { runSeed: runSeed ?? simSeed, simulationEra },
+          { runSeed: runSeed ?? simSeed, simulationEra, respinsUsed },
         )
         set({
           result: seasonResult,
@@ -320,18 +362,25 @@ export const useGameStore = create<GameState>((set, get) => ({
       return
     }
 
-    set({ phase: 'spinning', respinsAtCurrentSlot: 0 })
+    set({ phase: 'spinning', respinsAtCurrentSlot: 0, slotRolledConstructorIds: [] })
     try {
       const { rolledSpinKeys } = get()
-      const spun = await spinForSlot(spinIndex, runSeed, newPicks.length, 0, rolledSpinKeys)
-      const nextKey = spinEntryKey(spun.spinEntry)
+      const spun = await spinForSlot(
+        spinIndex,
+        runSeed,
+        newPicks.length,
+        0,
+        rolledSpinKeys,
+        [],
+        false,
+      )
+      const rollRecord = recordRoll(rolledSpinKeys, [], spun.spinEntry)
       set({
         spinEntry: spun.spinEntry,
         seasonPack: spun.seasonPack,
         phase: 'draft',
-        rolledSpinKeys: rolledSpinKeys.includes(nextKey)
-          ? rolledSpinKeys
-          : [...rolledSpinKeys, nextKey],
+        rolledSpinKeys: rollRecord.rolledSpinKeys,
+        slotRolledConstructorIds: rollRecord.slotRolledConstructorIds,
       })
     } catch (err) {
       console.error('Failed to load next spin', err)
@@ -369,6 +418,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       simulationEraPolicy: '2026',
       respinsAtCurrentSlot: 0,
       rolledSpinKeys: [],
+      slotRolledConstructorIds: [],
     }),
 
   goToPhase: (phase) => set({ phase }),

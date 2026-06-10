@@ -4,7 +4,7 @@ import type { DraftPick, GameMode, SeasonResult, SimulationEraChoice, Simulation
 import { SEASON_PERK_DESCRIPTIONS, SEASON_PERK_LABELS } from '../types/game'
 import { computeSeasonAchievements } from '../engine/seasonAchievements'
 import { TIER_DESCRIPTIONS, TIER_LABELS } from '../engine/simulateSeason'
-import { formatShareUrl } from '../lib/runSeed'
+import { buildChallengeShareContent, formatShareUrl } from '../lib/runSeed'
 import { BeatHistoryPanel } from './BeatHistoryPanel'
 import { DraftRecapPanel } from './DraftRecapPanel'
 import { WikipediaSeasonTable } from './WikipediaSeasonTable'
@@ -32,25 +32,37 @@ export function ResultsPanel({ result, picks, shareMode = 'classic', shareEraPol
   const bestWdcPosition = Math.min(result.wdcPosition, result.driver2WdcPosition)
   const wdcLeaderName =
     result.wdcPosition <= result.driver2WdcPosition ? d1Name : d2Name
-  const shareText = `${result.constructorName} ${result.year}: ${TIER_LABELS[result.tier]} — P${result.wccPosition} WCC, ${result.totalPoints} pts, ${result.wins} wins`
   const seedUrl = formatShareUrl(result.runSeed, { mode: shareMode, eraPolicy: shareEraPolicy })
+  const challengeShare = buildChallengeShareContent({
+    tierLabel: TIER_LABELS[result.tier],
+    year: result.year,
+    wccPosition: result.wccPosition,
+    bestWdcPosition: bestWdcPosition,
+    totalPoints: result.totalPoints,
+    wins: result.wins,
+    runSeed: result.runSeed,
+    seedUrl,
+  })
 
   const handleShare = async () => {
-    const fullText = `${shareText}\n\nReplay seed: ${result.runSeed}\n${seedUrl}`
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'F1 Champion Builder', text: fullText, url: seedUrl })
+        await navigator.share({
+          title: challengeShare.title,
+          text: challengeShare.text,
+          url: challengeShare.url,
+        })
       } catch {
         /* user cancelled */
       }
     } else {
-      await navigator.clipboard.writeText(fullText)
-      alert('Result and seed link copied to clipboard!')
+      await navigator.clipboard.writeText(challengeShare.text)
+      alert('Challenge copied — paste it to invite someone to beat your seed!')
     }
   }
 
   const handleCopySeed = async () => {
-    await navigator.clipboard.writeText(seedUrl)
+    await navigator.clipboard.writeText(challengeShare.text)
     setSeedCopied(true)
     setTimeout(() => setSeedCopied(false), 2000)
   }
@@ -159,7 +171,7 @@ export function ResultsPanel({ result, picks, shareMode = 'classic', shareEraPol
             onClick={handleCopySeed}
             className="rounded-full border border-white/25 px-4 py-2 text-sm hover:border-f1-accent"
           >
-            {seedCopied ? 'Copied!' : 'Copy challenge link'}
+            {seedCopied ? 'Copied!' : 'Copy challenge invite'}
           </button>
         </div>
         <p className="text-xs text-white/35 mt-2 break-all font-mono">{seedUrl}</p>
@@ -189,7 +201,7 @@ export function ResultsPanel({ result, picks, shareMode = 'classic', shareEraPol
           onClick={handleShare}
           className="flex-1 py-3 rounded-full border border-white/30 text-white hover:border-f1-accent"
         >
-          Share result
+          Share challenge
         </button>
         <button
           type="button"
