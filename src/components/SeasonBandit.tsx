@@ -160,7 +160,7 @@ export function SeasonBandit({ onComplete, runSeed = null }: Props) {
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
           onClick={runSpin}
-          className="np-btn-primary uppercase tracking-wider"
+          className="np-btn-inverted uppercase tracking-wider np-focus"
         >
           Pull lever
         </motion.button>
@@ -177,7 +177,7 @@ export function SeasonBandit({ onComplete, runSeed = null }: Props) {
           animate={{ opacity: 1 }}
           whileHover={{ scale: 1.02 }}
           onClick={() => onComplete(result.perk)}
-          className="np-btn-primary"
+          className="np-btn-inverted np-focus"
         >
           Start season
         </motion.button>
