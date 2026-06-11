@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { to: '/play?mode=classic', label: 'Play' },
   { to: '/trophy-cabinet', label: 'Trophies' },
   { to: '/how-to-play', label: 'How to play' },
+  { to: '/feedback', label: 'Feedback' },
 ]
 
 const TICKER_ITEMS = [
