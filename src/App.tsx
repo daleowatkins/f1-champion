@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { applyDevGateFromUrl } from './config/devGate'
 import { loadDraftBadges } from './engine/badges'
+import { AppLayout } from './components/layout/AppLayout'
 import { Home } from './pages/Home'
 import { Play } from './pages/Play'
 import { HowToPlay } from './pages/HowToPlay'
@@ -20,12 +21,14 @@ export default function App() {
   return (
     <BrowserRouter basename={routerBase || undefined}>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/play" element={<Play />} />
-        <Route path="/how-to-play" element={<HowToPlay />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/dev" element={<DevLab />} />
-        <Route path="/trophy-cabinet" element={<TrophyCabinet />} />
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/play" element={<Play />} />
+          <Route path="/how-to-play" element={<HowToPlay />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/dev" element={<DevLab />} />
+          <Route path="/trophy-cabinet" element={<TrophyCabinet />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   )

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { allSlotsFilled, useGameStore } from '../store/gameStore'
 import { SpinReel } from '../components/SpinReel'
 import { DraftBoard } from '../components/DraftBoard'
@@ -157,17 +157,11 @@ export function Play() {
   const showFullWidthResults = phase === 'simulate' || phase === 'results'
 
   return (
-    <div className="min-h-screen py-8">
-      <div className={`px-4 ${showFullWidthResults ? '' : 'max-w-5xl mx-auto'}`}>
-        <Link to="/" className="text-sm text-white/40 hover:text-white mb-6 inline-block">
-          ← Home
-        </Link>
-      </div>
-
+    <div className="py-8">
       <div className={`px-4 ${showFullWidthResults ? '' : 'max-w-5xl mx-auto'}`}>
       {phase === 'priority' && (
         <>
-          <p className="text-center text-xs text-f1-accent mb-4">
+          <p className="text-center text-xs text-accent mb-4 font-semibold">
             Season: {eraPolicy === 'historical-first-spin' ? 'Historical (set by first roll)' : '2026 Championship'}
           </p>
           <PrioritySelect onSelect={setDriverPriority} />
@@ -176,15 +170,17 @@ export function Play() {
 
       {showFirstSpin && (
         <div className="flex flex-col items-center">
-          <h1 className="text-2xl font-bold mb-2 text-center">Spin your first team</h1>
-          <p className="text-white/50 text-sm mb-8 text-center">
+          <h1 className="font-serif text-2xl sm:text-3xl font-extrabold tracking-tight mb-2 text-center text-foreground">
+            Spin your first team
+          </h1>
+          <p className="text-muted text-sm mb-8 text-center">
             Watch the reels scroll, land on a team and year, then pick any component you like.
           </p>
           {driverPriority && (
-            <p className="text-xs text-f1-accent mb-4">
+            <p className="text-xs text-accent mb-4 font-medium">
               {DRIVER_PRIORITY_LABELS[driverPriority]}
               {simulationEraPolicy === 'historical-first-spin' && simulationEra.type === 'historical' && (
-                <span className="block text-white/50 mt-1">Racing in {eraBadge(simulationEra)}</span>
+                <span className="block text-muted mt-1">Racing in {eraBadge(simulationEra)}</span>
               )}
             </p>
           )}
@@ -224,8 +220,8 @@ export function Play() {
             />
             {!isSpinning && seasonPack && !draftComplete ? (
               <div>
-                <h2 className="text-lg font-bold mb-1">Choose a component</h2>
-                <p className="text-sm text-white/50 mb-4">
+                <h2 className="font-serif text-lg font-bold mb-1 text-foreground">Choose a component</h2>
+                <p className="text-sm text-muted mb-4">
                   All options from {seasonPack.constructorName} {seasonPack.year} — pick one, then
                   re-spin
                   {maxRespins !== null && ` (${respinsRemaining ?? maxRespins} left this run)`}.
@@ -240,7 +236,7 @@ export function Play() {
               </div>
             ) : (
               isSpinning && (
-                <p className="text-center text-white/50 text-sm py-4">
+                <p className="text-center text-muted text-sm py-4">
                   {picks.length > 0 ? 'Spinning next team...' : 'Loading team...'}
                 </p>
               )
@@ -268,11 +264,11 @@ export function Play() {
           />
           {simulationError && (
             <div className="text-center mt-4 space-y-3">
-              <p className="text-f1-red text-sm">{simulationError}</p>
+              <p className="text-destructive text-sm">{simulationError}</p>
               <button
                 type="button"
                 onClick={() => beginSimulation().catch(console.error)}
-                className="px-6 py-2 rounded-full bg-f1-red font-semibold text-white text-sm"
+                className="np-btn-primary text-sm"
               >
                 Retry simulation
               </button>
@@ -288,7 +284,7 @@ export function Play() {
               <button
                 type="button"
                 onClick={skipSimulation}
-                className="px-5 py-2 rounded-full border border-white/30 text-white/80 text-sm hover:border-f1-accent"
+                className="np-btn-ghost text-sm"
               >
                 Skip to results
               </button>

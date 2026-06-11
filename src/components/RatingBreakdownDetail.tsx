@@ -28,13 +28,13 @@ export function RatingBreakdownDetail({ option }: Props) {
   }
 
   return (
-    <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3 text-xs">
-      <p className="text-white/40 uppercase tracking-wider mb-2">Rating breakdown</p>
+    <div className="mt-3 np-inset p-3 text-xs">
+      <p className="text-muted uppercase tracking-wider mb-2 font-semibold">Rating breakdown</p>
       <dl className="grid grid-cols-2 gap-x-3 gap-y-1">
         {rows.map((row) => (
           <div key={row.label} className="contents">
-            <dt className="text-white/45">{row.label}</dt>
-            <dd className="text-white/80 text-right font-medium">{row.value}</dd>
+            <dt className="text-muted">{row.label}</dt>
+            <dd className="text-foreground text-right font-medium">{row.value}</dd>
           </div>
         ))}
       </dl>

@@ -65,11 +65,13 @@ export function SpinReel({
           <motion.div
             animate={isSpinning ? { y: [0, -4, 0] } : { y: 0 }}
             transition={{ repeat: isSpinning ? Infinity : 0, duration: 0.12 }}
-            className="rounded-2xl bg-f1-card border border-white/20 px-4 py-5 text-center min-h-[108px] flex flex-col justify-center"
+            className="np-well px-4 py-5 text-center min-h-[108px] flex flex-col justify-center"
           >
-            <p className="text-xs uppercase tracking-widest text-white/40 mb-2 shrink-0">Team</p>
+            <p className="text-xs uppercase tracking-widest text-muted mb-2 shrink-0 font-semibold">
+              Team
+            </p>
             <p
-              className={`text-lg sm:text-xl font-bold text-white leading-snug line-clamp-2 ${
+              className={`font-serif text-lg sm:text-xl font-bold text-foreground leading-snug line-clamp-2 ${
                 isSpinning ? 'opacity-90' : ''
               }`}
             >
@@ -79,17 +81,19 @@ export function SpinReel({
           <motion.div
             animate={isSpinning ? { y: [0, 4, 0] } : { y: 0 }}
             transition={{ repeat: isSpinning ? Infinity : 0, duration: 0.12 }}
-            className="rounded-2xl bg-f1-card border border-white/20 px-4 py-5 text-center min-h-[108px] flex flex-col justify-center"
+            className="np-well px-4 py-5 text-center min-h-[108px] flex flex-col justify-center"
           >
-            <p className="text-xs uppercase tracking-widest text-white/40 mb-2 shrink-0">Year</p>
-            <p className="text-xl font-bold text-f1-red leading-none">
+            <p className="text-xs uppercase tracking-widest text-muted mb-2 shrink-0 font-semibold">
+              Year
+            </p>
+            <p className="font-serif text-xl font-extrabold text-accent leading-none">
               {shown?.year ?? '—'}
             </p>
           </motion.div>
         </div>
         {isSpinning && (
-          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 pointer-events-none flex flex-col gap-[52px]">
-            <div className="h-px bg-f1-accent/40" />
+          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 pointer-events-none">
+            <div className="h-0.5 bg-accent/30 " />
           </div>
         )}
       </div>
@@ -102,17 +106,13 @@ export function SpinReel({
             whileTap={{ scale: 0.97 }}
             onClick={onSpin}
             disabled={isSpinning || !spinReady}
-            className="px-8 py-3 rounded-full bg-f1-red font-bold text-white uppercase tracking-wider disabled:opacity-50"
+            className="np-btn-primary uppercase tracking-wider disabled:opacity-50"
           >
             {isSpinning ? 'Spinning...' : spinReady ? 'Spin' : 'Loading...'}
           </motion.button>
         )}
         {canRespin && onRespin && entry && !isSpinning && (
-          <button
-            type="button"
-            onClick={onRespin}
-            className="px-6 py-3 rounded-full border border-white/30 text-white/80 text-sm hover:border-f1-accent"
-          >
+          <button type="button" onClick={onRespin} className="np-btn-ghost text-sm">
             Re-spin
             {respinsRemaining != null ? ` (${respinsRemaining} left)` : ''}
           </button>

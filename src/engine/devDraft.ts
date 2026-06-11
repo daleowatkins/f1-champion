@@ -1,6 +1,6 @@
 import type { DraftOption, DraftPick, DraftPool, SeasonPack, SlotType } from '../types/game'
 import { SLOT_ORDER } from '../types/game'
-import { reserveDriverOptions } from './spinPool'
+import { chassisOptionsForDraft, reserveDriverOptions } from './spinPool'
 
 export interface SlotSource {
   year: number
@@ -31,6 +31,9 @@ export function optionsForSlot(
 ): DraftOption[] {
   if (slot === 'reserveDriver') {
     return reserveDriverOptions(pack.draftPool, usedDriverIds)
+  }
+  if (slot === 'chassis') {
+    return chassisOptionsForDraft(pack.draftPool.chassis)
   }
   return pack.draftPool[SLOT_POOL_KEY[slot]] as DraftOption[]
 }

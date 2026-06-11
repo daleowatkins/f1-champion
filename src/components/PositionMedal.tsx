@@ -8,9 +8,9 @@ interface Props {
 
 function medalForPosition(position: Position): { emoji: string; className: string; label: string } | null {
   if (position === 'DNF' || position > 3) return null
-  if (position === 1) return { emoji: '🥇', className: 'text-yellow-400', label: 'Gold' }
-  if (position === 2) return { emoji: '🥈', className: 'text-slate-300', label: 'Silver' }
-  return { emoji: '🥉', className: 'text-amber-600', label: 'Bronze' }
+  if (position === 1) return { emoji: '🥇', className: 'text-amber-600', label: 'Gold' }
+  if (position === 2) return { emoji: '🥈', className: 'text-slate-500', label: 'Silver' }
+  return { emoji: '🥉', className: 'text-amber-700', label: 'Bronze' }
 }
 
 export function PositionMedal({ position, label, compact }: Props) {
@@ -19,7 +19,7 @@ export function PositionMedal({ position, label, compact }: Props) {
 
   if (compact) {
     return (
-      <span className={`inline-flex items-center gap-1 ${medal?.className ?? 'text-white/70'}`}>
+      <span className={`inline-flex items-center gap-1 ${medal?.className ?? 'text-muted'}`}>
         {medal && <span aria-hidden>{medal.emoji}</span>}
         <span>{label}: {posText}</span>
       </span>
@@ -28,13 +28,11 @@ export function PositionMedal({ position, label, compact }: Props) {
 
   return (
     <div
-      className={`rounded-lg border px-3 py-2 text-center min-w-[100px] ${
-        medal
-          ? 'border-white/25 bg-white/5'
-          : 'border-white/10 bg-f1-card/50'
+      className={`px-3 py-2 text-center min-w-[100px] ${
+        medal ? 'np-card' : 'np-inset'
       }`}
     >
-      <p className="text-xs text-white/40 truncate max-w-[120px]">{label}</p>
+      <p className="text-xs text-muted truncate max-w-[120px]">{label}</p>
       {medal ? (
         <>
           <p className="text-2xl mt-1" aria-label={medal.label}>
@@ -43,7 +41,7 @@ export function PositionMedal({ position, label, compact }: Props) {
           <p className={`text-sm font-bold ${medal.className}`}>{posText}</p>
         </>
       ) : (
-        <p className="text-lg font-bold text-white/50 mt-1">{posText}</p>
+        <p className="text-lg font-bold text-muted mt-1">{posText}</p>
       )}
     </div>
   )

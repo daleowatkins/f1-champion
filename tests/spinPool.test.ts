@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import {
   availableSpinEntries,
+  chassisModelNumber,
+  pickLatestChassisOption,
   pickRandomSpin,
   spinEntryKey,
 } from '../src/engine/spinPool'
+import type { DraftOption } from '../src/types/game'
 import type { SpinEntry } from '../src/types/game'
 import { deriveSeed, pickSpinWithRand, seededRandom } from '../src/lib/runSeed'
 
@@ -20,6 +23,26 @@ const vanwallYears: SpinEntry[] = [
   { id: 'ferrari-1955', constructorId: 'ferrari', constructorName: 'Ferrari', year: 1955, weight: 14 },
   { id: 'maserati-1955', constructorId: 'maserati', constructorName: 'Maserati', year: 1955, weight: 6 },
 ]
+
+describe('latest chassis', () => {
+  it('picks the highest model number', () => {
+    const options: DraftOption[] = [
+      { id: 'lotus-24', name: 'Lotus 24', rating: 88 },
+      { id: 'lotus-33', name: 'Lotus 33', rating: 88 },
+      { id: 'lotus-25', name: 'Lotus 25', rating: 88 },
+    ]
+    expect(pickLatestChassisOption(options)?.id).toBe('lotus-33')
+    expect(chassisModelNumber('mclaren-mcl38')).toBe(38)
+  })
+
+  it('breaks ties by rating then original order', () => {
+    const options: DraftOption[] = [
+      { id: 'car-a-10', name: 'A10', rating: 80 },
+      { id: 'car-b-10', name: 'B10', rating: 90 },
+    ]
+    expect(pickLatestChassisOption(options)?.id).toBe('car-b-10')
+  })
+})
 
 describe('spinPool exclusion', () => {
   it('uses constructor-year as the roll key', () => {

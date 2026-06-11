@@ -154,6 +154,31 @@ export function isSyntheticReserveOption(option: DraftOption): boolean {
 }
 
 /** Reserve slot draws from the spun team's race lineup first, then named reserves. */
+/** Largest model number in a chassis id (e.g. lotus-33 → 33, mclaren-mcl38 → 38). */
+export function chassisModelNumber(id: string): number {
+  const matches = id.match(/\d+/g)
+  if (!matches?.length) return 0
+  return Math.max(...matches.map((n) => Number(n)))
+}
+
+/** When a team-year has several chassis, keep only the latest spec for the draft pool. */
+export function pickLatestChassisOption(options: DraftOption[]): DraftOption | null {
+  if (options.length === 0) return null
+  if (options.length === 1) return options[0]
+  return [...options].sort((a, b) => {
+    const modelDiff = chassisModelNumber(b.id) - chassisModelNumber(a.id)
+    if (modelDiff !== 0) return modelDiff
+    const ratingDiff = b.rating - a.rating
+    if (ratingDiff !== 0) return ratingDiff
+    return options.indexOf(b) - options.indexOf(a)
+  })[0]
+}
+
+export function chassisOptionsForDraft(options: DraftOption[]): DraftOption[] {
+  const latest = pickLatestChassisOption(options)
+  return latest ? [latest] : []
+}
+
 export function reserveDriverOptions(
   pool: DraftPool,
   usedDriverIds: Set<string>,
@@ -215,7 +240,8 @@ export function getAllAvailableOptionGroups(pool: DraftPool, picks: DraftPick[])
 
   for (const { slot, poolKey, category } of singleSlots) {
     if (isSlotFilled(picks, slot)) continue
-    const available = pool[poolKey] as DraftOption[]
+    const raw = pool[poolKey] as DraftOption[]
+    const available = slot === 'chassis' ? chassisOptionsForDraft(raw) : raw
     if (available.length > 0) {
       groups.push({
         category,

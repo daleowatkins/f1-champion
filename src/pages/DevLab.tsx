@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import {
   DRIVER_PRIORITY_LABELS,
   SLOT_LABELS,
@@ -250,20 +250,19 @@ function DevLabInner() {
   const driver2Name = picks.find((p) => p.slot === 'driver2')?.option.name ?? 'Driver 2'
 
   return (
-    <div className="min-h-screen py-8 px-4 max-w-6xl mx-auto">
-      <Link to="/" className="text-sm text-white/40 hover:text-white">
-        ← Home
-      </Link>
-      <div className="mt-4 mb-6">
-        <p className="text-f1-accent text-xs uppercase tracking-widest">Dev only</p>
-        <h1 className="text-3xl font-bold mt-1">Simulation Lab</h1>
-        <p className="text-white/50 text-sm mt-2">
+    <div className="py-8 max-w-6xl mx-auto">
+      <div className="mb-6 border-b-4 border-ink pb-4">
+        <p className="np-label mb-2">Editorial desk · Dev only</p>
+        <h1 className="font-serif text-3xl font-black tracking-tight text-foreground">
+          Simulation Lab
+        </h1>
+        <p className="text-muted text-sm mt-2">
           Pick any components from any team/year, then run the 2026 grid simulation instantly.
         </p>
       </div>
 
       {error && (
-        <p className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+        <p className="mb-4 np-inset px-4 py-3 text-sm text-destructive">
           {error}
         </p>
       )}
@@ -271,15 +270,15 @@ function DevLabInner() {
       {phase === 'configure' && (
         <div className="lg:grid lg:grid-cols-[1fr_220px] lg:gap-8">
           <div className="space-y-6">
-            <div className="rounded-xl border border-white/10 bg-f1-card p-4 space-y-4">
-              <p className="text-xs text-white/40 uppercase tracking-widest">Quick presets</p>
+            <div className="np-panel space-y-4">
+              <p className="text-xs text-muted uppercase tracking-widest">Quick presets</p>
               <div className="flex flex-wrap gap-2">
                 {PRESETS.map((preset) => (
                   <button
                     key={preset.label}
                     type="button"
                     onClick={() => applyPreset(preset.source).catch(console.error)}
-                    className="px-3 py-1.5 rounded-full border border-white/20 text-sm hover:border-f1-accent"
+                    className="np-btn-ghost text-sm min-h-0 px-3 py-1.5"
                   >
                     {preset.label}
                   </button>
@@ -287,8 +286,8 @@ function DevLabInner() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-f1-card p-4 space-y-4">
-              <label className="flex items-center gap-2 text-sm text-white/70">
+            <div className="np-panel space-y-4">
+              <label className="flex items-center gap-2 text-sm text-foreground">
                 <input
                   type="checkbox"
                   checked={mixSources}
@@ -309,7 +308,7 @@ function DevLabInner() {
                         constructorId: teams[0]?.constructorId ?? globalSource.constructorId,
                       })
                     }}
-                    className="rounded-lg bg-black/30 border border-white/20 px-3 py-2 text-sm"
+                    className="np-input py-2 text-sm"
                   >
                     {years.map((y) => (
                       <option key={y} value={y}>
@@ -322,7 +321,7 @@ function DevLabInner() {
                     onChange={(e) =>
                       setGlobalSource((prev) => ({ ...prev, constructorId: e.target.value }))
                     }
-                    className="flex-1 min-w-[200px] rounded-lg bg-black/30 border border-white/20 px-3 py-2 text-sm"
+                    className="flex-1 min-w-[200px] np-input py-2 text-sm"
                   >
                     {teamsForYear(globalSource.year).map((entry) => (
                       <option key={entry.id} value={entry.constructorId}>
@@ -337,7 +336,7 @@ function DevLabInner() {
                 <select
                   value={priority}
                   onChange={(e) => setPriority(e.target.value as DriverPriority)}
-                  className="rounded-lg bg-black/30 border border-white/20 px-3 py-2 text-sm"
+                  className="np-input py-2 text-sm"
                 >
                   {(Object.keys(DRIVER_PRIORITY_LABELS) as DriverPriority[]).map((key) => (
                     <option key={key} value={key}>
@@ -350,9 +349,9 @@ function DevLabInner() {
                   value={seed}
                   onChange={(e) => setSeed(e.target.value)}
                   placeholder="Seed (optional)"
-                  className="w-36 rounded-lg bg-black/30 border border-white/20 px-3 py-2 text-sm"
+                  className="w-36 np-input py-2 text-sm"
                 />
-                <label className="flex items-center gap-2 text-sm text-white/60">
+                <label className="flex items-center gap-2 text-sm text-muted">
                   <input
                     type="checkbox"
                     checked={animateSim}
@@ -363,16 +362,16 @@ function DevLabInner() {
                 <button
                   type="button"
                   onClick={() => handleAutoFill().catch(console.error)}
-                  className="px-4 py-2 rounded-full border border-white/20 text-sm hover:border-f1-accent"
+                  className="np-btn-ghost text-sm min-h-0"
                 >
                   Auto-fill best
                 </button>
               </div>
             </div>
 
-            <div className="rounded-xl border border-white/10 overflow-hidden">
+            <div className="np-inset overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-f1-card text-white/50 text-xs uppercase">
+                <thead className="text-muted text-xs uppercase np-inset">
                   <tr>
                     <th className="text-left px-3 py-2">Slot</th>
                     {mixSources && <th className="text-left px-3 py-2">Year</th>}
@@ -394,7 +393,7 @@ function DevLabInner() {
                     )
 
                     return (
-                      <tr key={slot} className="border-t border-white/5">
+                      <tr key={slot} className="border-t border-surface">
                         <td className="px-3 py-2 font-medium">{SLOT_LABELS[slot]}</td>
                         {mixSources && (
                           <td className="px-3 py-2">
@@ -413,7 +412,7 @@ function DevLabInner() {
                                 }))
                                 setSelection((prev) => ({ ...prev, [slot]: undefined }))
                               }}
-                              className="w-full rounded bg-black/30 border border-white/20 px-2 py-1 text-xs"
+                              className="np-input py-1 text-xs"
                             >
                               {years.map((y) => (
                                 <option key={y} value={y}>
@@ -434,7 +433,7 @@ function DevLabInner() {
                                 }))
                                 setSelection((prev) => ({ ...prev, [slot]: undefined }))
                               }}
-                              className="w-full rounded bg-black/30 border border-white/20 px-2 py-1 text-xs"
+                              className="np-input py-1 text-xs"
                             >
                               {teamsForYear(source.year).map((entry) => (
                                 <option key={entry.id} value={entry.constructorId}>
@@ -451,7 +450,7 @@ function DevLabInner() {
                             onChange={(e) =>
                               setSelection((prev) => ({ ...prev, [slot]: e.target.value }))
                             }
-                            className="w-full rounded bg-black/30 border border-white/20 px-2 py-1.5 text-sm"
+                            className="np-input py-1.5 text-sm"
                           >
                             <option value="">Select…</option>
                             {options
@@ -472,7 +471,7 @@ function DevLabInner() {
                               ))}
                           </select>
                         </td>
-                        <td className="px-3 py-2 text-right font-bold tabular-nums text-f1-accent">
+                        <td className="px-3 py-2 text-right font-bold tabular-nums text-accent">
                           {selected?.rating ?? '—'}
                         </td>
                       </tr>
@@ -481,7 +480,7 @@ function DevLabInner() {
                 </tbody>
               </table>
               {loadingPack && (
-                <p className="px-3 py-2 text-xs text-white/40 border-t border-white/5">
+                <p className="px-3 py-2 text-xs text-muted border-t border-surface">
                   Loading {loadingPack}…
                 </p>
               )}
@@ -491,7 +490,7 @@ function DevLabInner() {
               type="button"
               disabled={!resolvedPicks || !grid}
               onClick={() => runSimulation().catch(console.error)}
-              className="w-full py-3 rounded-full bg-f1-red font-bold text-white disabled:opacity-40"
+              className="np-btn-primary w-full disabled:opacity-40"
             >
               Run simulation
             </button>
@@ -509,14 +508,14 @@ function DevLabInner() {
             <button
               type="button"
               onClick={skipSimulation}
-              className="px-5 py-2 rounded-full border border-white/30 text-sm hover:border-f1-accent"
+              className="np-btn-ghost text-sm min-h-0"
             >
               Skip to results
             </button>
             <button
               type="button"
               onClick={reset}
-              className="px-5 py-2 rounded-full border border-white/30 text-sm hover:border-f1-accent"
+              className="np-btn-ghost text-sm min-h-0"
             >
               Back to builder
             </button>
@@ -539,7 +538,7 @@ function DevLabInner() {
             <button
               type="button"
               onClick={reset}
-              className="px-5 py-2 rounded-full border border-white/30 text-sm hover:border-f1-accent"
+              className="np-btn-ghost text-sm min-h-0"
             >
               New test run
             </button>

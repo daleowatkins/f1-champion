@@ -15,7 +15,7 @@ interface Props {
 export function OptionPool({ groups, mode, packYear, onSelect, disabled }: Props) {
   if (groups.length === 0) {
     return (
-      <p className="text-center text-white/50 text-sm py-4">
+      <p className="text-center text-muted text-sm py-4">
         All slots filled — finishing up...
       </p>
     )
@@ -25,10 +25,15 @@ export function OptionPool({ groups, mode, packYear, onSelect, disabled }: Props
     <div className="space-y-6">
       {groups.map((group) => (
         <div key={group.category}>
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-white/40 mb-2">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted mb-1">
             {group.category}
           </h3>
-          <div className="space-y-2">
+          {group.driverOptions && group.driverOptions.length > 0 && (
+            <p className="text-xs text-foreground mb-3 font-mono uppercase tracking-wide border-l-2 border-editorial-red pl-2">
+              Use the buttons below each driver to add them to your team
+            </p>
+          )}
+          <div className="space-y-3">
             {group.driverOptions?.map((item) => (
               <DriverOptionCard
                 key={item.option.id}
@@ -45,6 +50,7 @@ export function OptionPool({ groups, mode, packYear, onSelect, disabled }: Props
                 <ComponentCard
                   option={item.option}
                   mode={mode}
+                  effectSlot={item.slot}
                   badge={getOptionBadge(item.option, item.slot, packYear)}
                   disabled={disabled}
                   isOnlyOption={group.options.length === 1}

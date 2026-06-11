@@ -1,8 +1,8 @@
 import type { SeasonPack, SimulationGrid } from '../types/game'
-import { loadSeasonPack } from './spinPool'
+import { chassisOptionsForDraft, loadSeasonPack } from './spinPool'
 
 function carRatingFromPool(pack: SeasonPack): number {
-  const chassis = pack.draftPool.chassis[0]?.rating ?? 50
+  const chassis = chassisOptionsForDraft(pack.draftPool.chassis)[0]?.rating ?? 50
   const engine = pack.draftPool.engines[0]?.rating ?? 50
   return Math.round((chassis + engine) / 2)
 }

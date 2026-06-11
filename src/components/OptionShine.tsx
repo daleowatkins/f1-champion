@@ -19,7 +19,7 @@ export function OptionShine({ badge, children, className = '' }: Props) {
 
   return (
     <div
-      className={`option-shine option-shine-${badge} rounded-xl ${className}`}
+      className={`option-shine option-shine-${badge} ${className}`}
     >
       <span
         className={`option-shine-badge option-shine-badge-${badge}`}

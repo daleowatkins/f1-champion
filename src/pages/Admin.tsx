@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { useDevGate } from '../hooks/useDevGate'
 import {
   deleteOverrideItem,
@@ -157,14 +157,14 @@ export function Admin() {
   if (!devUnlocked) return <Navigate to="/" replace />
 
   return (
-    <div className="min-h-screen px-4 py-8 max-w-7xl mx-auto">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div className="py-8 max-w-7xl mx-auto">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 border-b-4 border-ink pb-4">
         <div>
-          <Link to="/" className="text-sm text-white/40 hover:text-white">
-            ← Home
-          </Link>
-          <h1 className="text-2xl font-bold mt-2">Ratings Admin</h1>
-          <p className="text-sm text-white/50 mt-1">
+          <p className="np-label mb-2">Editorial desk · Dev only</p>
+          <h1 className="font-serif text-3xl font-black tracking-tight text-foreground">
+            Ratings Admin
+          </h1>
+          <p className="text-sm text-muted mt-1">
             Explore computed ratings, edit overrides, then rebuild data.
           </p>
         </div>
@@ -172,19 +172,19 @@ export function Admin() {
           type="button"
           onClick={handleRebuild}
           disabled={rebuilding}
-          className="px-5 py-2.5 rounded-full bg-f1-red font-semibold text-sm disabled:opacity-50"
+          className="np-btn-primary text-sm disabled:opacity-50"
         >
           {rebuilding ? 'Rebuilding…' : 'Rebuild data'}
         </button>
       </div>
 
       {error && (
-        <p className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+        <p className="mb-4 np-inset px-4 py-3 text-sm text-destructive">
           {error}
         </p>
       )}
       {status && (
-        <p className="mb-4 rounded-lg border border-f1-accent/40 bg-f1-accent/10 px-4 py-3 text-sm text-f1-accent">
+        <p className="mb-4 np-panel text-sm text-accent">
           {status}
         </p>
       )}
@@ -195,7 +195,7 @@ export function Admin() {
             <select
               value={yearFilter}
               onChange={(e) => setYearFilter(e.target.value)}
-              className="rounded-lg bg-f1-card border border-white/20 px-3 py-2 text-sm"
+              className="np-input py-2"
             >
               <option value="all">All years</option>
               {years.map((y) => (
@@ -207,7 +207,7 @@ export function Admin() {
             <select
               value={slotFilter}
               onChange={(e) => setSlotFilter(e.target.value as AdminSlot | 'all')}
-              className="rounded-lg bg-f1-card border border-white/20 px-3 py-2 text-sm"
+              className="np-input py-2"
             >
               <option value="all">All components</option>
               {(Object.keys(ADMIN_SLOT_LABELS) as AdminSlot[]).map((slot) => (
@@ -221,9 +221,9 @@ export function Admin() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search name or team…"
-              className="flex-1 min-w-[200px] rounded-lg bg-f1-card border border-white/20 px-3 py-2 text-sm"
+              className="np-input flex-1 min-w-[200px] py-2"
             />
-            <label className="flex items-center gap-2 text-sm text-white/60">
+            <label className="flex items-center gap-2 text-sm text-muted">
               <input
                 type="checkbox"
                 checked={overriddenOnly}
@@ -233,13 +233,13 @@ export function Admin() {
             </label>
           </div>
 
-          <p className="text-xs text-white/40">
+          <p className="text-xs text-muted">
             {loading ? 'Loading…' : `${filtered.length} entries`}
           </p>
 
-          <div className="rounded-xl border border-white/10 overflow-hidden">
+          <div className="np-inset overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-f1-card text-white/50 text-xs uppercase">
+              <thead className="text-muted text-xs uppercase np-inset">
                 <tr>
                   <th className="text-left px-3 py-2">Year</th>
                   <th className="text-left px-3 py-2">Team</th>
@@ -253,12 +253,12 @@ export function Admin() {
                   <tr
                     key={entry.key}
                     onClick={() => selectEntry(entry)}
-                    className={`border-t border-white/5 cursor-pointer hover:bg-white/5 ${
-                      selected?.key === entry.key ? 'bg-f1-accent/10' : ''
+                    className={`border-t border-surface cursor-pointer hover:opacity-80 ${
+                      selected?.key === entry.key ? 'bg-accent/10' : ''
                     }`}
                   >
                     <td className="px-3 py-2">{entry.year}</td>
-                    <td className="px-3 py-2 text-white/70">{entry.constructorName}</td>
+                    <td className="px-3 py-2 text-foreground">{entry.constructorName}</td>
                     <td className="px-3 py-2">
                       <span className="font-medium">{entry.name}</span>
                       {entry.isOverridden && (
@@ -268,7 +268,7 @@ export function Admin() {
                     <td className="px-3 py-2 text-right font-bold tabular-nums">
                       {entry.rating}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-white/50">
+                    <td className="px-3 py-2 text-right tabular-nums text-muted">
                       {entry.teammateDelta !== null
                         ? entry.teammateDelta > 0
                           ? `+${Math.round(entry.teammateDelta)}`
@@ -286,64 +286,64 @@ export function Admin() {
               type="button"
               disabled={page === 0}
               onClick={() => setPage((p) => p - 1)}
-              className="px-3 py-1 rounded border border-white/20 disabled:opacity-40"
+              className="np-btn-ghost text-xs px-3 py-1 min-h-0 disabled:opacity-40"
             >
               Previous
             </button>
-            <span className="text-white/50">
+            <span className="text-muted">
               Page {page + 1} of {pageCount}
             </span>
             <button
               type="button"
               disabled={page >= pageCount - 1}
               onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1 rounded border border-white/20 disabled:opacity-40"
+              className="np-btn-ghost text-xs px-3 py-1 min-h-0 disabled:opacity-40"
             >
               Next
             </button>
           </div>
         </div>
 
-        <aside className="rounded-xl border border-white/10 bg-f1-card p-4 h-fit sticky top-6">
+        <aside className="np-panel h-fit sticky top-24">
           {selected ? (
             <div className="space-y-4">
               <div>
-                <p className="text-xs text-white/40 uppercase">Selected</p>
+                <p className="text-xs text-muted uppercase font-semibold">Selected</p>
                 <h2 className="font-bold text-lg mt-1">{selected.name}</h2>
-                <p className="text-sm text-white/50">
+                <p className="text-sm text-muted">
                   {selected.constructorName} · {selected.year}
                 </p>
-                <p className="text-xs text-white/40 mt-1">
+                <p className="text-xs text-muted mt-1">
                   {ADMIN_SLOT_LABELS[selected.slot]} · {selected.optionId}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="rounded-lg bg-white/5 p-2">
-                  <p className="text-xs text-white/40">Current OVR</p>
+                <div className="np-inset p-2">
+                  <p className="text-xs text-muted">Current OVR</p>
                   <p className="text-xl font-bold">{selected.rating}</p>
                 </div>
-                <div className="rounded-lg bg-white/5 p-2">
-                  <p className="text-xs text-white/40">Computed</p>
+                <div className="np-inset p-2">
+                  <p className="text-xs text-muted">Computed</p>
                   <p className="text-xl font-bold">{selected.computedRating}</p>
                 </div>
                 {selected.seasonForm !== null && (
-                  <div className="rounded-lg bg-white/5 p-2">
-                    <p className="text-xs text-white/40">Season form</p>
+                  <div className="np-inset p-2">
+                    <p className="text-xs text-muted">Season form</p>
                     <p className="text-lg font-semibold">{selected.seasonForm}</p>
                   </div>
                 )}
                 {selected.computedRating !== selected.seasonForm && (
-                  <div className="rounded-lg bg-white/5 p-2 col-span-2">
-                    <p className="text-xs text-white/40">Career-aware blend (rookies weight year more)</p>
-                    <p className="text-sm text-white/60">
+                  <div className="np-inset p-2 col-span-2">
+                    <p className="text-xs text-muted">Career-aware blend (rookies weight year more)</p>
+                    <p className="text-sm text-muted">
                       Blended from season results and career pedigree
                     </p>
                   </div>
                 )}
                 {selected.teammateDelta !== null && (
-                  <div className="rounded-lg bg-white/5 p-2">
-                    <p className="text-xs text-white/40">vs teammate</p>
+                  <div className="np-inset p-2">
+                    <p className="text-xs text-muted">vs teammate</p>
                     <p className="text-lg font-semibold">
                       {selected.teammateDelta > 0 ? '+' : ''}
                       {Math.round(selected.teammateDelta)} pts
@@ -353,35 +353,35 @@ export function Admin() {
               </div>
 
               {selected.teammateNames.length > 0 && (
-                <p className="text-xs text-white/50">
+                <p className="text-xs text-muted">
                   Compared to: {selected.teammateNames.join(', ')}
                 </p>
               )}
 
               {selected.points !== null && (
-                <p className="text-xs text-white/50">Season points: {selected.points}</p>
+                <p className="text-xs text-muted">Season points: {selected.points}</p>
               )}
 
               <div>
-                <label className="text-xs text-white/40 uppercase">Override rating</label>
+                <label className="text-xs text-muted uppercase font-semibold">Override rating</label>
                 <input
                   type="number"
                   min={30}
                   max={99}
                   value={editRating}
                   onChange={(e) => setEditRating(e.target.value)}
-                  className="mt-1 w-full rounded-lg bg-black/30 border border-white/20 px-3 py-2"
+                  className="mt-1 np-input"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-white/40 uppercase">Note (optional)</label>
+                <label className="text-xs text-muted uppercase font-semibold">Note (optional)</label>
                 <input
                   type="text"
                   value={editNote}
                   onChange={(e) => setEditNote(e.target.value)}
                   placeholder="Why this change?"
-                  className="mt-1 w-full rounded-lg bg-black/30 border border-white/20 px-3 py-2 text-sm"
+                  className="mt-1 np-input text-sm"
                 />
               </div>
 
@@ -390,7 +390,7 @@ export function Admin() {
                   type="button"
                   onClick={handleSave}
                   disabled={saving}
-                  className="w-full py-2.5 rounded-lg bg-f1-red font-semibold text-sm disabled:opacity-50"
+                  className="np-btn-primary w-full text-sm disabled:opacity-50"
                 >
                   {saving ? 'Saving…' : 'Save override'}
                 </button>
@@ -399,7 +399,7 @@ export function Admin() {
                     type="button"
                     onClick={handleClearOverride}
                     disabled={saving}
-                    className="w-full py-2.5 rounded-lg border border-white/20 text-sm disabled:opacity-50"
+                    className="np-btn-ghost w-full text-sm disabled:opacity-50"
                   >
                     Clear override
                   </button>
@@ -407,7 +407,7 @@ export function Admin() {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-white/50">Select a row to inspect and edit.</p>
+            <p className="text-sm text-muted">Select a row to inspect and edit.</p>
           )}
         </aside>
       </div>

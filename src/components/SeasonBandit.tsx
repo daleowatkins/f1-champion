@@ -21,15 +21,16 @@ function SymbolTile({ id, large }: { id: BanditSymbolId; large?: boolean }) {
   const symbol = getBanditSymbol(id)
   return (
     <div
-      className={`flex flex-col items-center justify-center rounded-lg border border-white/15 bg-[#12121c] ${
+      className={`flex flex-col items-center justify-center np-inset ${
         large ? 'h-24 w-full' : 'h-16 w-full'
       }`}
-      style={{ boxShadow: `inset 0 0 24px ${symbol.accent}22` }}
     >
       <span className={large ? 'text-4xl' : 'text-2xl'} role="img" aria-hidden>
         {symbol.emoji}
       </span>
-      <span className="text-[10px] uppercase tracking-wider text-white/40 mt-1">{symbol.label}</span>
+      <span className="text-[10px] uppercase tracking-wider text-muted mt-1 font-medium">
+        {symbol.label}
+      </span>
     </div>
   )
 }
@@ -92,17 +93,19 @@ export function SeasonBandit({ onComplete, runSeed = null }: Props) {
   }, [phase, runSeed])
 
   return (
-    <div className="max-w-lg mx-auto text-center">
-      <p className="text-sm text-white/50 uppercase tracking-widest mb-2">Pre-season bonus</p>
-      <h2 className="text-2xl font-bold mb-2">Paddock Fruit Machine</h2>
-      <p className="text-white/60 text-sm mb-8">
+    <div className="max-w-lg mx-auto text-center np-section-inverted p-8 sm:p-10 border border-ink">
+      <p className="font-mono text-[10px] uppercase tracking-widest mb-2 text-neutral-400">Pre-season bonus</p>
+      <h2 className="font-serif text-2xl font-extrabold tracking-tight mb-2 text-paper">
+        Paddock Fruit Machine
+      </h2>
+      <p className="text-neutral-400 text-sm mb-8">
         Pull the lever. Line up three trophies for a random season perk — roughly 1 in 5 runs.
       </p>
 
-      <div className="rounded-2xl border-2 border-f1-accent/30 bg-gradient-to-b from-f1-card to-[#0d0d14] p-6 mb-6 shadow-[0_0_40px_rgba(0,210,190,0.08)]">
+      <div className="border border-paper bg-ink p-4 mb-6">
         <div className="grid grid-cols-3 gap-3 mb-4">
           {displayReels.map((symbolId, index) => (
-            <div key={index} className="overflow-hidden rounded-xl border border-white/10 bg-black/40 p-1">
+            <div key={index} className="overflow-hidden np-inset p-1">
               <motion.div
                 animate={phase === 'spinning' ? { y: [0, -8, 0] } : { y: 0 }}
                 transition={
@@ -117,7 +120,7 @@ export function SeasonBandit({ onComplete, runSeed = null }: Props) {
           ))}
         </div>
 
-        <div className="flex flex-wrap justify-center gap-2 text-[10px] text-white/35 uppercase tracking-wider">
+        <div className="flex flex-wrap justify-center gap-2 text-[10px] text-muted uppercase tracking-wider">
           {BANDIT_SYMBOLS.map((s) => (
             <span key={s.id}>
               {s.emoji} {s.label}
@@ -132,19 +135,19 @@ export function SeasonBandit({ onComplete, runSeed = null }: Props) {
             key="outcome"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 rounded-xl border border-white/15 bg-f1-card p-4 text-left"
+            className="mb-6 np-panel text-left"
           >
             {result.won && result.perk ? (
               <>
-                <p className="text-f1-accent font-bold text-lg mb-1">
+                <p className="text-accent font-bold text-lg mb-1">
                   🏆 Jackpot — {SEASON_PERK_LABELS[result.perk]}
                 </p>
-                <p className="text-sm text-white/60">{SEASON_PERK_DESCRIPTIONS[result.perk]}</p>
+                <p className="text-sm text-muted">{SEASON_PERK_DESCRIPTIONS[result.perk]}</p>
               </>
             ) : (
               <>
-                <p className="font-semibold text-white/80 mb-1">No jackpot this time</p>
-                <p className="text-sm text-white/50">Your team heads into the season as built.</p>
+                <p className="font-semibold text-foreground mb-1">No jackpot this time</p>
+                <p className="text-sm text-muted">Your team heads into the season as built.</p>
               </>
             )}
           </motion.div>
@@ -157,14 +160,14 @@ export function SeasonBandit({ onComplete, runSeed = null }: Props) {
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
           onClick={runSpin}
-          className="px-10 py-4 rounded-full bg-f1-red font-bold text-white uppercase tracking-wider shadow-lg"
+          className="np-btn-primary uppercase tracking-wider"
         >
           Pull lever
         </motion.button>
       )}
 
       {phase === 'spinning' && (
-        <p className="text-f1-accent animate-pulse font-semibold">Spinning…</p>
+        <p className="text-accent animate-pulse font-semibold">Spinning…</p>
       )}
 
       {phase === 'done' && result && (
@@ -174,7 +177,7 @@ export function SeasonBandit({ onComplete, runSeed = null }: Props) {
           animate={{ opacity: 1 }}
           whileHover={{ scale: 1.02 }}
           onClick={() => onComplete(result.perk)}
-          className="px-10 py-3 rounded-full bg-f1-accent text-f1-dark font-bold"
+          className="np-btn-primary"
         >
           Start season
         </motion.button>

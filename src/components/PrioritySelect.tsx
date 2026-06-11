@@ -30,9 +30,11 @@ interface Props {
 
 export function PrioritySelect({ onSelect }: Props) {
   return (
-    <div className="flex flex-col items-center max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold mb-2 text-center">Driver priority</h1>
-      <p className="text-white/50 text-sm mb-8 text-center">
+    <div className="flex flex-col items-center max-w-lg mx-auto px-4">
+      <h1 className="font-serif text-2xl sm:text-3xl font-extrabold tracking-tight mb-2 text-center text-foreground">
+        Driver priority
+      </h1>
+      <p className="text-muted text-sm mb-8 text-center">
         Choose how your team treats its drivers before you start spinning.
       </p>
       <div className="w-full space-y-3">
@@ -43,10 +45,10 @@ export function PrioritySelect({ onSelect }: Props) {
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
             onClick={() => onSelect(opt.id)}
-            className="w-full text-left rounded-xl border border-white/20 bg-f1-card p-4 hover:border-f1-accent/60 transition-colors"
+            className="w-full text-left p-5 np-well np-hard-shadow-hover np-focus"
           >
-            <p className="font-bold text-white">{opt.title}</p>
-            <p className="text-sm text-white/50 mt-1">{opt.description}</p>
+            <p className="font-serif font-bold text-foreground">{opt.title}</p>
+            <p className="text-sm text-muted mt-1">{opt.description}</p>
           </motion.button>
         ))}
       </div>
