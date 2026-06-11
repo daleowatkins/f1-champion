@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { applyDevGateFromUrl } from './config/devGate'
 import { loadDraftBadges } from './engine/badges'
+import { initAnalytics } from './lib/analytics'
 import { AppLayout } from './components/layout/AppLayout'
 import { Home } from './pages/Home'
 import { Play } from './pages/Play'
@@ -9,9 +10,11 @@ import { HowToPlay } from './pages/HowToPlay'
 import { Admin } from './pages/Admin'
 import { DevLab } from './pages/DevLab'
 import { TrophyCabinet } from './pages/TrophyCabinet'
+import { Feedback } from './pages/Feedback'
 
 export default function App() {
   useEffect(() => {
+    initAnalytics()
     applyDevGateFromUrl()
     loadDraftBadges().catch(console.error)
   }, [])
@@ -28,6 +31,7 @@ export default function App() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/dev" element={<DevLab />} />
           <Route path="/trophy-cabinet" element={<TrophyCabinet />} />
+          <Route path="/feedback" element={<Feedback />} />
         </Route>
       </Routes>
     </BrowserRouter>

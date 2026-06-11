@@ -27,6 +27,7 @@ import {
 import { RESPINS_PER_RUN } from '../config/gameConfig'
 import { isDevUnlocked } from '../config/devGate'
 import { archiveRun } from '../lib/trophyCabinet'
+import { trackEvent } from '../lib/analytics'
 import { createRunSeed, deriveSeed, pickSpinWithRand, seededRandom } from '../lib/runSeed'
 
 interface GameState {
@@ -188,7 +189,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   setRunSeed: (seed) => set({ runSeed: seed }),
 
   setDriverPriority: (priority) => {
-    const { runSeed } = get()
+    const { runSeed, mode, simulationEraPolicy } = get()
+    trackEvent('game_start', {
+      mode,
+      era: simulationEraPolicy,
+      priority,
+    })
     set({
       driverPriority: priority,
       phase: 'spin',
@@ -390,9 +396,18 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   finishSimulation: () => {
-    const { result, picks, runSeed } = get()
-    if (result && runSeed !== null) {
-      archiveRun(result, picks, runSeed)
+    const { result, picks, runSeed, mode, respinsUsed, simulationEra } = get()
+    if (result) {
+      trackEvent('game_complete', {
+        mode,
+        tier: result.tier,
+        era: simulationEra.type === '2026' ? '2026' : 'historical',
+        wcc_position: result.wccPosition,
+        respins_used: respinsUsed,
+      })
+      if (runSeed !== null) {
+        archiveRun(result, picks, runSeed)
+      }
     }
     set({ phase: 'results' })
   },
